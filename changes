@@ -1,0 +1,12 @@
+11-02-2013
+iptable rules updated for sslstrip
+
+11-10-2013
+Moved airmon-ng to Zero_Chaos's airmon-zc
+Removed minor redundant variables
+Encoded ESSID to fuck with ios6 because we can
+
+12-09-2013
+Added path detection and absolute path relativeness
+for symlinking ability within ebuilds.
+Moved dnsmasq settings into config file
