@@ -4,7 +4,7 @@
 # Building a sane working environment #
 #######################################
 
-#retrieve basolute path structures so we can use symlinks and config files
+#retrieve absolute path structures so we can use symlinks and config files
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
 	DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
