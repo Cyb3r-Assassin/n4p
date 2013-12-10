@@ -6,12 +6,12 @@ EAPI="4"
 
 DESCRIPTION="Configures network variables automatically for MITM, ARP, and SSLstriping attacks"
 HOMEPAGE="https://github.com/Cyb3r-Assassin"
-SRC_URI="http://master.dl.sourceforge.net/project/n4p/${P}.tar.gz"
+SRC_URI="https://github.com/Cyb3r-Assassin/n4p/archive/${P}.tar.gz"
 
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="wireless mitm vpn"
+IUSE="+wireless +mitm +vpn"
 
 DEPEND="net-misc/bridge-utils
 	>=net-firewall/iptables-1.4.20
