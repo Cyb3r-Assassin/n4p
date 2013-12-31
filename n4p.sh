@@ -45,11 +45,11 @@ setupenv()
 	prep_air=$(ps -A | grep -i airbase)
 	prep_dnsmasq=$(ps -A | grep -i dnsmasq)
 	prep_mon=$(ip addr | grep -i $MON)
-	# Checked for orphaned and lingering processes then sanities them
-	if [ "$prep_host" != "" ]; then echo "[$WARN] Leftover scoobie snacks found! Attempting clean up"; killall hostapd; fi
-	if [ "$prep_air" != "" ]; then echo "[$WARN] Leftover scoobie snacks found! Attempting clean up"; killall airbase-ng; fi
-	if [ "$prep_dnsmasq" != "" ]; then echo "[$WARN] Leftover scoobie snacks found! Attempting clean up"; killall dnsmasq; fi
-	if [ "$prep_mon" != "" ]; then echo "[$WARN] Leftover scoobie snacks found! Attempting clean up"; airmon-zc stop $MON; fi
+	# Checked for orphaned and lingering processes then sanitize them
+	if [ "$prep_host" != "" ]; then echo "[$WARN] Leftover scoobie snacks found! nom nom"; killall hostapd; fi
+	if [ "$prep_air" != "" ]; then echo "[$WARN] Leftover scoobie snacks found! nom nom"; killall airbase-ng; fi
+	if [ "$prep_dnsmasq" != "" ]; then echo "[$WARN] Leftover scoobie snacks found! nom nom"; killall dnsmasq; fi
+	if [ "$prep_mon" != "" ]; then echo "[$WARN] Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
 	LAN=eth0 # Prevent early termination errors
 	WLAN=wlan0 # Prevent early termination errors
 	sessionfolder=/tmp/.n4p #set our tmp working configuration directory and then build config files
