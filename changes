@@ -1,12 +1,49 @@
-11-02-2013
-iptable rules updated for sslstrip
+0.5
+Fixed firewall routing with bridging
 
-11-10-2013
+Cleaned up loosely defined variables and variable structures
+
+Updated find attributes to -wholename
+
+Cleaned up error checking and improved error loops and added per process monitoring
+
+Cleaned verbose outputs for easier follow along reading
+
+Added -- switches/flags feature. e.g. n4p --help
+
+Lot of code changes and additions. 
+New methods of operations and package control.
+
+New less redundant more sane kill script logic
+
+Removed dnsmasq - Was just too much for me to maintain and account for everyones boxes.
+
+Changed ESSID to Pentoo
+
+Changed some ip lease ranges on DHCPD
+
+Added protection to prevent rfkill traps
+
+More comprehensive text color usage.
+
+added n4p_iptables.sh so iptables can me utilized without running n4p
+
+0.4 12-09-2013
+Added path detection and absolute path relativeness
+
+for symlinking ability within ebuilds.
+
+Moved dnsmasq settings into config file
+
+0.3 11-10-2013
 Moved airmon-ng to Zero_Chaos's airmon-zc
+
 Removed minor redundant variables
+
 Encoded ESSID to fuck with ios6 because we can
 
-12-09-2013
-Added path detection and absolute path relativeness
-for symlinking ability within ebuilds.
-Moved dnsmasq settings into config file
+0.2 11-02-2013
+iptable rules updated for sslstrip
+
+0.1 10-25-2013
+Alpha testing
