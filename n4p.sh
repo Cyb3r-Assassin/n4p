@@ -314,8 +314,6 @@ startairbase()
 	try route add -net 10.0.0.0 netmask 255.255.255.0 gw 10.0.0.254
 	next
 	AIRBASE="On"
-	sleep 3
-	/etc/init.d/dhcpd restart
 }
 #################################################################
 #################Verify our DHCP and bridge needs################
@@ -363,7 +361,6 @@ openrc_bridge()
 	try brctl addif $BRIDGE $RESP_BR_2
 	try ip link set $BRIDGE up
 	next
-	/etc/init.d/net.$BRIDGE start
 }
 
 fbridge()
@@ -411,13 +408,13 @@ fbridge()
 dhcp()
 {
 	if [[ -n $(cat /etc/dhcp/dhcpd.conf | grep -i Pentesters_AP | awk {'print $2'}) ]]; then
-		if [[ $BRIDGED == 'False' && -z $AIRBASE ]]; then
-			/etc/init.d/dhcpd restart
-		elif [[ $BRIDGED == 'False' && $AIRBASE == 'On' ]]; then # For the bridge to work OpenRC needs to bring the interface up
+		if [[ $BRIDGED == 'False' ]]; then
 			if [[ -e /etc/init.d/net.$AP ]]; then
 				rm	/etc/init.d/net.$AP # We cant have this when assigning static routes
-				/etc/init.d/dhcpd restart
 			fi
+			/etc/init.d/dhcpd restart
+		else
+			/etc/init.d/net.$BRIDGE start
 		fi
 	else # We apparently don't have the proper configuration file. Make the changes and try again
 		find * -wholename $DIR/dhcpd.conf -exec cat {} >> /etc/dhcp/dhcpd.conf \;
