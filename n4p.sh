@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# I REALLY REALLY FUCKING HATE GITHUB!
 ##############################################
 # Do all prerun variables and safty measures #
 # before anything else starts happening      #
@@ -110,7 +111,7 @@ setupenv()
 	
 	sessionfolder=/tmp/n4p #set our tmp working configuration directory and then build config files
 	if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
-	mkdir -p "$sessionfolder" "$sessionfolder/logs"
+		mkdir -p "$sessionfolder" "$sessionfolder/logs"
 	if [[ -n $(rfkill list | grep yes) ]]; then #if I think of a better way to do this then update this feature to be more comprehensive
   		rfkill unblock 0
 	fi
