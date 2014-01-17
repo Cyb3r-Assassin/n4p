@@ -12,7 +12,7 @@ Cleaned verbose outputs for easier follow along reading
 Added -- switches/flags feature. e.g. n4p --help
 
 Lot of code changes and additions. 
-New methods of operations and package control.
+New methods of operations and package controll.
 
 New less redundant more sane kill script logic
 
@@ -26,15 +26,13 @@ Added protection to prevent rfkill traps
 
 More comprehensive text color usage.
 
-added n4p_iptables.sh so iptables can me utilized without running n4p
+added n4p_iptables.sh so iptables can be utilized without running n4p
 
 Removed Hostapd. Was too hard for me to provide in production environment. Hostapd requires many config file 
 attributes that are designed to be permanent on your box. If you want to use hostapd and not airbase then you're on your own.
 
 0.4 12-09-2013
-Added path detection and absolute path relativeness
-
-for symlinking ability within ebuilds.
+Added path detection and absolute path relativeness for symlinking ability within ebuilds.
 
 Moved dnsmasq settings into config file
 
