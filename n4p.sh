@@ -1,5 +1,5 @@
 #!/bin/bash
-kedfzesbilfseBltgbaeuiltlUIETL
+
 ##############################################
 # Do all prerun variables and safty measures #
 # before anything else starts happening      #
