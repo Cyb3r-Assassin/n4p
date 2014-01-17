@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 ##############################################
 # Do all prerun variables and safty measures #
 # before anything else starts happening      #
@@ -286,7 +285,7 @@ trap killemAll INT HUP;
 ##################################################################
 startairbase()
 {
-	while [[ $(try ip addr list | grep -i $WLAN | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2) != 'DOWN' ]]; do 
+	while [[ $(ip addr list | grep -i $WLAN | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2) != 'DOWN' ]]; do 
 		ip link set "$WLAN" down
 	done
 
@@ -323,32 +322,32 @@ openrc_bridge()
 {
 	# OpenRC needs sym links to bring the interface up. Verify they exist as needed if not make them then set proper state
 	if [[ -e /etc/init.d/net.$BRIDGE ]]; then
-		if [[ $("/etc/init.d/net.$BRIDGE" status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
+		if [[ $(/etc/init.d/net.$BRIDGE status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
 			/etc/init.d/net.$BRIDGE stop; sleep 1; try ip link set $BRIDGE down
 		fi
 	else
 		ln -s /etc/init.d/net.lo /etc/init.d/net.$BRIDGE
 	fi
 	if [[ -e /etc/init.d/net.$RESP_BR_1 ]]; then
-		if [[ $("/etc/init.d/net.$RESP_BR_1" status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
+		if [[ $(/etc/init.d/net.$RESP_BR_1 status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
 			/etc/init.d/net.$RESP_BR_1 stop; sleep 1; try ip link set $RESP_BR_1 down
 		fi
 	else
 		ln -s /etc/init.d/net.lo /etc/init.d/net.$RESP_BR_1
 	fi
 	if [[ -e /etc/init.d/net.$RESP_BR_2 ]]; then
-		if [[ $("/etc/init.d/net.$RESP_BR_2" status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then 
+		if [[ $(/etc/init.d/net.$RESP_BR_2 status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then 
 			/etc/init.d/net.$RESP_BR_2 stop; sleep 1; try ip link set $RESP_BR_2 down
 		fi
 	else
 		ln -s /etc/init.d/net.lo /etc/init.d/net.$RESP_BR_2
 	fi
 
-	local CHK_IP=$(ip addr list | grep "$RESP_BR_1" | grep inet | awk '{print $2}') # This insures $RESP_BR_2 does not have an ip and then removes it if it does since the bridge handles this
+	local CHK_IP=$(ip addr list | grep $RESP_BR_1 | grep inet | awk '{print $2}') # This insures $RESP_BR_2 does not have an ip and then removes it if it does since the bridge handles this
 	if [[ -n $CHK_IP ]]; then
 		ip addr del $CHK_IP dev $RESP_BR_1
 	fi
-	local CHK_IP=$(ip addr list | grep "$RESP_BR_2" | grep inet | awk '{print $2}') # This insures $RESP_BR_2 does not have an ip and then removes it if it does since the bridge handles this
+	local CHK_IP=$(ip addr list | grep $RESP_BR_2 | grep inet | awk '{print $2}') # This insures $RESP_BR_2 does not have an ip and then removes it if it does since the bridge handles this
 	if [[ -n $CHK_IP ]]; then
 		ip addr del $CHK_IP dev $RESP_BR_2
 	fi
