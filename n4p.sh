@@ -315,6 +315,7 @@ startairbase()
 	next
 	AIRBASE="On"
 	sleep 3
+	/etc/init.d/dhcpd restart
 }
 #################################################################
 #################Verify our DHCP and bridge needs################
