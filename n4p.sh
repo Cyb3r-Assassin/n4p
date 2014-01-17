@@ -23,49 +23,36 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 if [[ -n $1 ]]; then
 	if [[ $1 == '-h' || $1 == '--help' ]]; then # yeah this is that help menu
-		echo -e "Useage: n4p [mode] [option] [option] [option]
+		echo -e "Useage: n4p [mode] [option] [option]
 		where: mode
 			-f 				fast setup
 			--fast			fast setup
-		where: option 1
-			-a 				Airbase-zc enabled
-			--Airbase 		Airbase-zc enabled
-			-h 				Hostapd enabled
-			--hostapd 		Hostapd enabled
-		Where: option 2
+		Where: option 1
 			-b 				Bridged mode
 			--bridge 		Bridged mode
 			-d 				DHCPD enabled
 			--dhcpd 		DHCPD enabled
-		Where: option 3
+		Where: option 2
 			-s 				Use SSL Strip
 			--sslstrip 		Use SSL Strip"
 		exit 0
 	# If any fast options were used predefine there variables now
 	elif [[ $1 == '-f' || $1 == '--fast' ]]; then
 		FAST="True"
+		FAST_HOSTAPD="True"
 		
-		if [[ $2 == '-a' || $2 == '--Airbase' ]]; then
-			FAST_AIRBASE="True"
-		elif [[ $2 == '-h' || $2 == '--hostpad' ]]; then
-			FAST_HOSTAPD="True"
-		else
-			echo "Invalid option see --help"
-			exit 0
-		fi
-		
-		if [[ $3 == '-b' || $3 == '--bridge' ]]; then
+		if [[ $2 == '-b' || $2 == '--bridge' ]]; then
 			BRIDGED="True"
-		elif [[ $3 == '-d' || $3 == '--dhcpd' ]]; then
+		elif [[ $2 == '-d' || $2 == '--dhcpd' ]]; then
 			FAST_DHCPD="TRUE"
 		else
 			echo "Invalid option see --help"
 			exit 0
 		fi
 		
-		if [[ $4 == '-s' || $4 == '--sslstrip' ]]; then
+		if [[ $3 == '-s' || $3 == '--sslstrip' ]]; then
 			FAST_SSLSTRIP="True"
-		else
+		elif [[ -n $3 ]]; then
 			echo "Invalid option see --help"
 			exit 0
 		fi
@@ -117,20 +104,13 @@ banner()
 setupenv()
 {
 	# Checked for orphaned processes then sanitize them
-	if [[ -n $(ps -A | grep -i hostapd) ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; killall hostapd; fi
-	
 	if [[ -n $(ps -A | grep -i airbase) ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; killall airbase-ng; fi
 	
 	if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
 	
 	sessionfolder=/tmp/n4p #set our tmp working configuration directory and then build config files
-	hostapdconf="$sessionfolder/config/hostapd.conf"
-	
-	if [[ ! -d $sessionfolder ]]; then mkdir "$sessionfolder"; fi
-	
-	mkdir -p "$sessionfolder" "$sessionfolder/logs" "$sessionfolder/config"
-	touch "$sessionfolder/config/hostapd.deny" "$sessionfolder/config/hostapd.accept" "$sessionfolder/config/hostapd.conf" "$sessionfolder/logs/hostapd.dump"
-	
+	if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
+	mkdir -p "$sessionfolder" "$sessionfolder/logs"
 	if [[ -n $(rfkill list | grep yes) ]]; then #if I think of a better way to do this then update this feature to be more comprehensive
   		rfkill unblock 0
 	fi
@@ -227,7 +207,12 @@ settings()
 		if [[ -z $LAN ]]; then LAN="eth0"; fi
 		
 		if [[ -z $WLAN ]]; then WLAN="wlan0"; fi
-		
+
+		if [[ -e /etc/init.d/net.$WLAN ]]; then
+			if [[ $(/etc/init.d/net.$WLAN status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
+				/etc/init.d/net.$WLAN stop
+			fi
+		fi
 		ip link set $WLAN down # No need for extra verification code just force the device down even if it's alread down
 		iwconfig $WLAN mode managed #Force managed mode upon wlan because there is a glitch that can block airmon from bringing the interface up if not previously done
 		ESSID="Pentoo"
@@ -246,26 +231,13 @@ keepalive()
 killemAll()
 {
 	echo -e "\n\n$WARN The script has died. Major network configurations have been modified.\nWe must go down cleanly or your system will be left in a broken state!"
-	if [[ $(/etc/init.d/dhcpd status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
-		/etc/init.d/dhcpd stop
-	fi
-
-	if [[ $AIRBASE != 'On' ]]; then
-		if [[ -e /etc/init.d/net.$WLAN ]]; then
-			if [[ $(/etc/init.d/net.$WLAN status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then 
-				/etc/init.d/net.$WLAN stop
-			fi
-		fi	
-		pkill hostapd
-	else
-		if [[ -e /etc/init.d/net.$AP ]]; then
-			if [[ $(/etc/init.d/net.$AP status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
-				/etc/init.d/net.$AP stop
-			fi
+	if [[ -e /etc/init.d/net.$AP ]]; then
+		if [[ $(/etc/init.d/net.$AP status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
+			/etc/init.d/net.$AP stop
 		fi
-		pkill airbase-ng
-		airmon-zc stop $MON
 	fi
+	pkill airbase-ng
+	airmon-zc stop $MON
 
 	if [[ $BRIDGED == 'True' ]]; then
 		if [[ $(/etc/init.d/net.$BRIDGE status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
@@ -299,13 +271,6 @@ rebuild_network()
 			fi
 			/etc/init.d/net.$LAN start
 		fi
-	elif [[ $MENU_REBUILD_NETWORK == 2 ]]; then 
-		if [[ $(/etc/init.d/net.$WLAN status | sed 's/* status: //g' | cut -d ' ' -f 2) != 'started' ]]; then 
-			if [[ $(ip addr list | grep -i $WLAN | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2) == 'DOWN' ]]; then
-				ip link set $WLAN up
-			fi
-			/etc/init.d/net.$WLAN start
-		fi
 	else 
 		clear
 		echo "$WARN Invalid option"
@@ -315,39 +280,6 @@ rebuild_network()
 }
 trap killemAll INT HUP;
 
-##################################################################
-##################Setup for hostapd accesspoint###################
-##################################################################
-hostapdconfig()
-{
-	find * -wholename $DIR/hostapd.base -exec cat {} > "$hostapdconf" \;
-	if (( ($MENUCHOICE == 1) )); then echo "enable_karma=1" >> "$hostapdconf"; else echo "enable_karma=0" >> "$hostapdconf"; fi
-	echo "interface=$WLAN" >> "$hostapdconf"
-	echo "dump_file=$sessionfolder/logs/hostapd.dump" >> "$hostapdconf"
-	echo "ssid=$ESSID" >> "$hostapdconf"
-	echo "channel=$CHAN" >> "$hostapdconf"
-	echo "beacon_int=$BEACON" >> "$hostapdconf"
-	echo "accept_mac_file=$sessionfolder/config/hostapd.accept" >> "$hostapdconf"
-	echo "deny_mac_file=$sessionfolder/config/hostapd.deny" >> "$hostapdconf"
-	ip link set $WLAN up
-}
-
-starthostapd()
-{
-	echo "$PASS STARTING SERVICES:"
-	if [[ $BRIDGED == 'False' ]]; then
-		step "hostapd comming up"
-		try ip addr add 10.0.0.254 broadcast 10.0.0.255 dev $WLAN
-		try hostapd "$hostapdconf"
-		sleep 5 ## Future add verification of AP instead of sleep
-		try route add -net 10.0.0.0 netmask 255.255.255.0 gw 10.0.0.254 # Needs some time before coming up
-		next
-	else
-		step "hostapd comming up"
-		try hostapd "$hostapdconf"; sleep 1
-		next
-	fi
-}
 ##################################################################
 ###############Setup for Airbase-ng and airmon-zc#################
 ##################################################################
@@ -362,13 +294,13 @@ startairbase()
 	try airmon-zc start $WLAN
 	next
 
-	if (( ($MENUCHOICE == 4) )); then
+	if (( ($MENUCHOICE == 2) )); then
 		step "STARTING SERVICE: AIRBASE-NG"
 		try airbase-ng $MON -c $CHAN -x $PPS -I $BEACON -e $ESSID -v > $sessionfolder/logs/airbase-ng.log &
 		sleep .5 ## future put this and the next line in a more comprehensive loop
 		try cat $sessionfolder/logs/airbase-ng.log # I like to see things on my screen so show me the goods
 		next
-	elif (( ($MENUCHOICE == 3) )); then # used elif instead of just else for more comprehensive structure so users may modify easier.
+	elif (( ($MENUCHOICE == 1) )); then # used elif instead of just else for more comprehensive structure so users may modify easier.
 		step "$PASS STARTING SERVICE: KARMA AIRBASE-NG"
 		try airbase-ng $MON -c $CHAN -x $PPS -I $BEACON -e $ESSID -P -C 15 -v > $sessionfolder/logs/airbase-ng.log &
 		sleep .5
@@ -382,6 +314,7 @@ startairbase()
 	try route add -net 10.0.0.0 netmask 255.255.255.0 gw 10.0.0.254
 	next
 	AIRBASE="On"
+	sleep 3
 }
 #################################################################
 #################Verify our DHCP and bridge needs################
@@ -699,25 +632,17 @@ fw_down()
 menu()
 {
 	if [[ -n $FAST ]]; then
-		if [[ -n $FAST_HOSTAPD ]]; then
-			MENUCHOICE="2"
-		else
-			MENUCHOICE="4"
-		fi
+		MENUCHOICE="2"
 	else
 		echo "${BLD_ORA}
 		+===================================+
-		| 1) HOSTAPD WITH KARMA             |
-		| 2) HOSTAPD NO KARMA               |
-		| 3) Airbase-NG WITH KARMA          |
-		| 4) Airbase-NG NO KARMA            |
+		| 1) Airbase-NG WITH KARMA          |
+		| 2) Airbase-NG NO KARMA            |
 		+===================================+${TXT_RST}"
 		read -e -p "Option: " MENUCHOICE
 	fi
 	
 	if (( ( $MENUCHOICE == 1 ) || ( $MENUCHOICE == 2 ) )); then
-		hostapdconfig; fbridge; starthostapd; fw_up; dhcp; keepalive
-	elif (( ( $MENUCHOICE == 3 ) || ( $MENUCHOICE == 4 ) )); then
 		startairbase; fbridge; fw_up; dhcp; keepalive
 	else 
 		clear; echo "$WARN Invalid option"; menu
