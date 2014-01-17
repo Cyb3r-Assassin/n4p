@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# I REALLY REALLY FUCKING HATE GITHUB!
+
 ##############################################
 # Do all prerun variables and safty measures #
 # before anything else starts happening      #
