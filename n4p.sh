@@ -271,6 +271,13 @@ rebuild_network()
 			fi
 			/etc/init.d/net.$LAN start
 		fi
+	elif [[ $MENU_REBUILD_NETWORK == 2 ]]; then
+		if [[ $(/etc/init.d/net.$WLAN status | sed 's/* status: //g' | cut -d ' ' -f 2) != 'started' ]]; then 
+			if [[ $(ip addr list | grep -i $WLAN | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2) == 'DOWN' ]]; then
+				ip link set $WLAN up
+			fi
+			/etc/init.d/net.$WLAN start
+		fi
 	else 
 		clear
 		echo "$WARN Invalid option"
