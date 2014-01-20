@@ -400,7 +400,7 @@ fbridge()
 				clear; echo "Invalid option"; fbridge
 			fi
 		fi
-	elif [[ $BRIDGED == 'True' ]]; then # If we are here then $FAST -f was enabled with $3 -b
+	elif [[ $BRIDGED == 'True' ]]; then # If we are here then $FAST -f was enabled with -b
 		BRIDGE=br0
 		RESP_BR_1=$LAN
 		if [[ -n $FAST_AIRBASE ]]; then
@@ -417,7 +417,7 @@ dhcp()
 	if [[ -n $(cat /etc/dhcp/dhcpd.conf | grep -i Pentesters_AP | awk {'print $2'}) ]]; then
 		if [[ $BRIDGED == 'False' ]]; then
 			if [[ -e /etc/init.d/net.$AP ]]; then
-				rm	/etc/init.d/net.$AP # We cant have this when assigning static routes
+				rm /etc/init.d/net.$AP # We cant have this when assigning static routes
 			fi
 			/etc/init.d/dhcpd restart
 		else
