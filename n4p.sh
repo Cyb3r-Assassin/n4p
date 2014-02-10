@@ -144,7 +144,6 @@ try() {
     if [[ $EXIT_CODE -ne 0 ]]; then
         STEP_OK=$EXIT_CODE
         [[ -w $sessionfolder/logs ]] && echo $STEP_OK > $sessionfolder/logs/step.$$
-
         if [[ -n $LOG_STEPS ]]; then
             local FILE=$(readlink -m "${BASH_SOURCE[1]}")
             local LINE=${BASH_LINENO[0]}
@@ -243,6 +242,7 @@ killemAll()
 		if [[ $(/etc/init.d/net.$BRIDGE status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
 			try /etc/init.d/net.$BRIDGE stop
 		fi
+
 		if [[ $(ip addr list | grep -i $BRDIGE | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2) != 'DOWN' ]]; then
 			ip link set $BRDIGE down
 		fi
@@ -316,7 +316,9 @@ startairbase()
 	fi
 
 	step "Assigning IP and Route to $AP"
-	try ip link set $AP up
+	while [[ $(ip addr list | grep -i $AP | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2) == 'DOWN' || -z $(ip addr list | grep -i $AP) ]]; do 
+		try ip link set $AP up
+	done
 	try ip addr add 10.0.0.254 broadcast 10.0.0.255 dev $AP
 	try route add -net 10.0.0.0 netmask 255.255.255.0 gw 10.0.0.254
 	next
@@ -335,6 +337,7 @@ openrc_bridge()
 	else
 		ln -s /etc/init.d/net.lo /etc/init.d/net.$BRIDGE
 	fi
+
 	if [[ -e /etc/init.d/net.$RESP_BR_1 ]]; then
 		if [[ $(/etc/init.d/net.$RESP_BR_1 status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
 			/etc/init.d/net.$RESP_BR_1 stop; sleep 1; try ip link set $RESP_BR_1 down
@@ -342,6 +345,7 @@ openrc_bridge()
 	else
 		ln -s /etc/init.d/net.lo /etc/init.d/net.$RESP_BR_1
 	fi
+
 	if [[ -e /etc/init.d/net.$RESP_BR_2 ]]; then
 		if [[ $(/etc/init.d/net.$RESP_BR_2 status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then 
 			/etc/init.d/net.$RESP_BR_2 stop; sleep 1; try ip link set $RESP_BR_2 down
@@ -383,7 +387,9 @@ fbridge()
 				ip addr
 				echo "{BLD_ORA}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${TXT_RST}"
 				read -p "$WARN Please tell me the first interface to use: " RESP_BR_1
+				
 				if [[ -z $RESP_BR_1 ]]; then RESP_BR_1=$LAN; fi
+				
 				read -p "$WARN Please tell me the second interface to use: " RESP_BR_2
 				if [[ -z $RESP_BR_2 ]]; then # Run default check to verify what our default interface should be encase the user forgot to set this properly.
 					if [[ $AIRBASE == 'On' ]]; then
