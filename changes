@@ -1,3 +1,13 @@
+Fixed fast mode without bridging
+Iptables alterations with new function for advanced alterations and expansion
+Increased cognitive targeted logging
+Increased attack vector princibles with ettercap sslstrip and logging with further alterations for saved user analysis after attacks.
+Fixed ocashional bug of route and ip assignments not being accepted to the AP
+Fixed DHCP on some systems freely assigning bad routes
+Intergrated SSLstrip and ettercap use
+Adjusted ip and route commands adhearing to new no wild card assignment standards
+Removed needless symlink creation of AP in /etc/init.d/ since we use static routing.
+
 0.5
 Fixed firewall routing with bridging
 

