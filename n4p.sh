@@ -40,7 +40,7 @@ if [[ -n $1 ]]; then
 	elif [[ $1 == '-f' || $1 == '--fast' ]]; then
 		FAST="True"
 		FAST_AIRBASE="True"
-		
+
 		if [[ $2 == '-b' || $2 == '--bridge' ]]; then
 			BRIDGED="True"
 		elif [[ $2 == '-d' || $2 == '--dhcpd' ]]; then
@@ -451,7 +451,7 @@ fbridge()
 				ip addr
 				echo "{BLD_ORA}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${TXT_RST}"
 				read -p "$QUES Please tell me the first interface to use: " RESP_BR_1
-				
+
 				if [[ -z $RESP_BR_1 ]]; then RESP_BR_1=$LAN; fi
 				
 				read -p "$QUES Please tell me the second interface to use: " RESP_BR_2
@@ -711,7 +711,7 @@ fw_ssl()
 fw_up()
 { 
 	fw_redundant
-		
+
 	if [[ $FAST != 'True' ]]; then
 		echo "$INFO It's time for specialty hacking configurations"
 		echo -e "These settings are not default as they may break daily activity.\nDaily rules will automagically be rebuilt when you're done hacking all the things"
