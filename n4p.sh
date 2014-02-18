@@ -149,7 +149,7 @@ action() {
     # Check if command failed and update $STEP_OK if so.
     local EXIT_CODE=$?
 
-    if [[ $EXIT_CODE -ne 0 ]]; then
+    if [[ $EXIT_CODE != 0 ]]; then
         STEP_OK=$EXIT_CODE
         [[ -w $sessionfolder/logs ]] && echo $STEP_OK > $sessionfolder/logs/step.$$
         if [[ -n $LOG_STEPS ]]; then
@@ -260,7 +260,6 @@ killemAll()
 		if [[ $STATUS == 'started' ]]; then
 			action /etc/init.d/net.$BRIDGE stop
 		fi
-
 		get_state "$BRDIGE"
 		if [[ $STATE != 'DOWN' ]]; then
 			ip link set $BRDIGE down
@@ -446,12 +445,13 @@ fbridge()
 			if [[ $RESP_BR == [yY] ]]; then
 				read -p "$QUES Create the arbitrary name of your bridge, e.g. br0: " BRIDGE
 				if [[ -z $BRIDGE ]]; then BRIDGE=br0; fi
+
 				echo -e "$INFO We need to setup the interfaces you are going to use with $BRIDGE \n e.g. $LAN and $AP, here are your possible choices"
 				echo "${BLD_ORA}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${TXT_RST}"
 				ip addr
 				echo "{BLD_ORA}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${TXT_RST}"
-				read -p "$QUES Please tell me the first interface to use: " RESP_BR_1
 
+				read -p "$QUES Please tell me the first interface to use: " RESP_BR_1
 				if [[ -z $RESP_BR_1 ]]; then RESP_BR_1=$LAN; fi
 				
 				read -p "$QUES Please tell me the second interface to use: " RESP_BR_2
@@ -490,9 +490,9 @@ dhcp()
 				get_RCstatus "$AP"
 				if [[ STATUS == 'started' ]]; then
 					echo ""
-				step "$INFO Restarting interface $AP up"
-				action /etc/init.d/net.$AP restart
-				next
+					step "$INFO Restarting interface $AP up"
+					action /etc/init.d/net.$AP restart
+					next
 				fi
 			else
 				echo ""
