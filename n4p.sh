@@ -5,7 +5,7 @@
 # before anything else starts happening      #
 ##############################################
 
-if [[ $(whoami) != 'root'  ]]; then # Verify we are root if not exit
+if [[ $(uid) != 0 ]]; then # Verify we are root if not exit
 	echo "$WARN Please Run This Script As Root or With Sudo!"
 	exit 0
 fi
