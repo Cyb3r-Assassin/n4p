@@ -1,12 +1,34 @@
-Fixed fast mode without bridging
-Iptables alterations with new function for advanced alterations and expansion
+#0.7
+#Increased attack vector princibles with ettercap sslstrip and logging with further alterations for saved user analysis after attacks.
+
+#Intergrated SSLstrip and ettercap use
+
+0.6
+Added a kickstart script infront of the previous n4p.sh and renamed it to n4p_main.sh to work around a xdisplay issue.
+
 Increased cognitive targeted logging
-Increased attack vector princibles with ettercap sslstrip and logging with further alterations for saved user analysis after attacks.
-Fixed ocashional bug of route and ip assignments not being accepted to the AP
+
+Fixed fast mode without bridging
+
+Fixed occasional bug of route and ip assignments not being accepted to the AP
+
 Fixed DHCP on some systems freely assigning bad routes
-Intergrated SSLstrip and ettercap use
+
 Adjusted ip and route commands adhearing to new no wild card assignment standards
-Removed needless symlink creation of AP in /etc/init.d/ since we use static routing.
+
+Moved attacks out for individual scripts
+
+allowed users to specify interfaces during launch
+
+allow users to adjust iprange of AP from dhcpd.conf
+
+prepare to bring back hostapd for wider range of attacks
+
+Fixed sym link conflict with the AP and DHCPD
+
+Cleaned up exacution verification script.
+
+Changed some veriable names for future scalability
 
 0.5
 Fixed firewall routing with bridging
