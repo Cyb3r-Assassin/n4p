@@ -19,7 +19,7 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 # yeah this is that help menu
 if [[ -n $1 ]]; then
-    if [[ $1 == '-h' || $1 == '--help' ]]; then
+    if [[ $1 == '--help' ]]; then
         echo "Useage: n4p [mode] [option] [option [eth0 wlan0]]
         where: mode
             -a              Airbase-ng as AP

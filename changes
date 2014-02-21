@@ -4,7 +4,7 @@
 #Intergrated SSLstrip and ettercap use
 
 0.6
-Added a kickstart script infront of the previous n4p.sh and renamed it to n4p_main.sh to work around a xdisplay issue.
+Added a kickstart script in front of the previous n4p.sh and renamed it to n4p_main.sh to work around an xdisplay issue.
 
 Increased cognitive targeted logging
 
@@ -14,7 +14,7 @@ Fixed occasional bug of route and ip assignments not being accepted to the AP
 
 Fixed DHCP on some systems freely assigning bad routes
 
-Adjusted ip and route commands adhearing to new no wild card assignment standards
+Adjusted ip and route commands adhering to new no wild card assignment standards
 
 Moved attacks out for individual scripts
 
@@ -26,9 +26,9 @@ prepare to bring back hostapd for wider range of attacks
 
 Fixed sym link conflict with the AP and DHCPD
 
-Cleaned up exacution verification script.
+Cleaned up execution verification script.
 
-Changed some veriable names for future scalability
+Changed some variable names for future scalability
 
 0.5
 Fixed firewall routing with bridging
