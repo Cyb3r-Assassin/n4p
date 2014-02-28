@@ -23,7 +23,7 @@ BLD_WHT=${txtbld}$(tput setaf 7) # white
 PUR=$(tput setaf 5)              # purple
 TXT_RST=$(tput sgr0)             # Reset
 EYES=$(tput setaf 6)
-AP_GATEWAY=$(grep routers dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+AP_GATEWAY=$(grep routers $DIR/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
 
 echo "${BLD_TEA}$(cat $DIR/opening.logo)${TXT_RST}"; sleep 2.5
 
@@ -32,7 +32,7 @@ if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
 
 get_name()
 {
-    USE=$(grep $1 n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 $DIR/n4p.conf | awk -F= '{print $2}')
 }
 
 menu()
@@ -56,16 +56,16 @@ menu()
     read -p "Option: " choice
     if [[ $choice == 1 ]]; then
         get_name "IFACE1="; IFACE1=$USE
-    	sudo xterm -bg black -fg blue -T "Recon" -geometry 90x20 -e ./recon.sh $IFACE1 recon &>/dev/null &
+    	sudo xterm -bg black -fg blue -T "Recon" -geometry 90x20 -e $DIR/./recon.sh $IFACE1 recon &>/dev/null &
     elif [[ $choice == 2 ]]; then
-    	sudo nano n4p.conf
+    	sudo nano $DIR/n4p.conf
     elif [[ $choice == 3 ]]; then
         get_name "IFACE1="; IFACE1=$USE
-        sudo xterm -bg black -fg blue -T "Dump Pcap" -geometry 90x20 -e ./recon.sh $IFACE1 dump &>/dev/null &
+        sudo xterm -bg black -fg blue -T "Dump Pcap" -geometry 90x20 -e $DIR/./recon.sh $IFACE1 dump &>/dev/null &
     elif [[ $choice == 4 ]]; then
-    	sudo xterm -bg black -fg blue -T "Main" -geometry 90x20 -e ./n4p_main.sh &>/dev/null &
+    	sudo xterm -bg black -fg blue -T "Main" -geometry 90x20 -e $DIR/./n4p_main.sh &>/dev/null &
     elif [[ $choice == 5 ]]; then
-    	sudo xterm -bg black -fg blue -T "iptables" -geometry 90x20 -e ./n4p_iptables.sh &>/dev/null &
+    	sudo xterm -bg black -fg blue -T "iptables" -geometry 90x20 -e $DIR/./n4p_iptables.sh &>/dev/null &
     elif [[ $choice == 6 ]]; then
         get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
         get_name "STATION="; STATION=$USE
@@ -78,7 +78,7 @@ menu()
         get_name "BRIDGE_NAME="; BR_NAME=$USE
         get_name "AP="; AP_NAME=$USE
         sudo touch $sessionfolder/recovered_passwords.pcap
-        X=$(grep BRIDGED= n4p.conf | awk -F= '{print $2}')
+        X=$(grep BRIDGED= $DIR/n4p.conf | awk -F= '{print $2}')
         if [[ $X == "True" ]]; then
     	   sudo xterm -T "ettercap $BR_NAME" -geometry 90x20 -e ettercap -Tzq -i $BR_NAME -w /tmp/n4p/recovered_passwords.pcap &>/dev/null &
         elif [[ $AP_NAME == "AIRBASE" ]]; then

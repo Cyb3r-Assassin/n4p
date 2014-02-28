@@ -42,7 +42,7 @@ next() {
 #######################################
 get_name() # Retrieve the config values
 {
-    USE=$(grep $1 n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 $DIR/n4p.conf | awk -F= '{print $2}')
 }
 
 get_state() # Retrieve the state of interfaces
@@ -81,10 +81,10 @@ depends()
     get_name "ATTACK="; ATTACK=$USE
     get_name "TYPE="; TYPE=$USE
     get_name "ENCRYPTION="; ENCRYPTION=$USE
-    AP_GATEWAY=$(grep routers dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
-    AP_SUBNET=$(grep netmask dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
-    AP_IP=$(grep netmask dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
-    AP_BROADCAST=$(grep broadcast-address dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+    AP_GATEWAY=$(grep routers $DIR/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+    AP_SUBNET=$(grep netmask $DIR/dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
+    AP_IP=$(grep netmask $DIR/dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
+    AP_BROADCAST=$(grep broadcast-address $DIR/dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
     # Text color variables
     TXT_UND=$(tput sgr 0 1)          # Underline
     TXT_BLD=$(tput bold)             # Bold
@@ -203,7 +203,6 @@ startairbase()
             airbase-ng -$TYPE $ENCRYPTION -c $CHAN -x $PPS -I $BEACON -e $ESSID -P -v $MON > $sessionfolder/logs/airbase-ng.log &
             sleep 1.5
         elif [[ $ATTACK == "Karma" ]]; then # used elif instead of just else for more comprehensive structure so users may modify easier.
-            echo -n "$INFO STARTING SERVICE: KARMA AIRBASE-NG"
             airbase-ng -c $CHAN -x $PPS -I $BEACON -e $ESSID -P -C 15 -v $MON > $sessionfolder/logs/airbase-ng.log &
             sleep 1.5
         else # This just gives us an AP, useful for Sniffing
@@ -247,7 +246,7 @@ startairbase()
 
 monitor()
 {
-    xterm -hold -bg black -fg blue -T "N4P Victims" -geometry 60x35 -e ./monitor.sh $1 &>/dev/null &
+    xterm -hold -geometry 60x35 -bg black -fg blue -T "N4P Victims" -e $DIR/./monitor.sh $1 &>/dev/null &
     # Uncomment following lines to use different monitoring options that best suit you.
     #xterm -hold -bg black -fg blue -T "N4P Victims" -geometry 65x15 -e dhcpdump -i $1 &>/dev/null &
     #xterm -hold -bg black -fg blue -T "N4P Victims" -geometry 65x15 -e arp -a -i $1 &>/dev/null &

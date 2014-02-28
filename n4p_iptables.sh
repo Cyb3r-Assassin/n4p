@@ -175,8 +175,8 @@ ap()
 fw_up()
 { 
     fw_redundant
-    X=$(grep BRIDGED\= n4p.conf | awk -F\= '{print $2}')
-    XX=$(grep AP\= n4p.conf | awk -F\= '{print $2}')
+    X=$(grep BRIDGED\= $DIR/n4p.conf | awk -F\= '{print $2}')
+    XX=$(grep AP\= $DIR/n4p.conf | awk -F\= '{print $2}')
     if [[ $X == "False" ]]; then
         if [[ $XX == "AIRBASE" ]]; then
             echo -ne "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"

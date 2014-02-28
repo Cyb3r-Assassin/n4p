@@ -28,7 +28,7 @@ echo "${BLD_TEA}$(cat $DIR/recon.logo)${TXT_RST}"; sleep 2.5
 
 get_name()
 {
-    USE=$(grep $1 n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 $DIR/n4p.conf | awk -F= '{print $2}')
 }
 
 get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
