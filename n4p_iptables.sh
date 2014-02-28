@@ -1,208 +1,219 @@
-#!/bin/sh
-# This script is by Cyb3r-Assassin too accommodate n4p.
-# You are free to modify and distribute as you please
-# The syntax is for Gentoo Linux and may need adjusted for different distributions
-# Twitter @Cyb3r_Assassin Freenode Cyb3r-Assassin
+#!/bin/bash
 
-# WARNING there is NO error checking in this script and features may be incomplete.
-# This script is not designed for out of box production level use, This is an early addition to n4p
-# Script is crude and fast for rebuild rules without running n4p
-# WARNING ugly code ahead
-# I will assume you know wtf you are doing before using and modifying, if not sucks to be you
-# If you have relevant rule additions please submit them to me
+if [[ $(whoami) != 'root'  ]]; then 
+    echo "[$CRIT] Please Run This Script As Root or With Sudo!"
+    exit 0
+fi
+
+#retrieve absolute path structures so we can use symlinks and config files
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
 
 IPT="/sbin/iptables"
-RESERVD="10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 127.0.0.0/8 169.254.0.0/16"
-DHCP="-t nat"
-LAN="eth0"
-LAN2="eth1"
-WAN="-t nat"
-WLAN="wlan0"
 AP="at0"
 VPN="tun0"
 VPNI="tap+"
-OK=`printf "\e[1;32m OK \e[0m"`
-WARN=`printf "\e[1;33m WARNING \e[0m"`
-CRIT=`printf "\e[1;31m WARNING \e[0m"`
-if [ $(whoami) != 'root'  ]]; then 
-	echo "[$CRIT] Please Run This Script As Root or With Sudo!"
-	exit 0
-fi
+sessionfolder=/tmp/n4p
+
+echo "$(cat $DIR/firewall.logo)"; sleep 2.5
+##################################################################
+######################Build the firewall##########################
+##################################################################
+fw_pre_services()
+{
+    if [[ -z $FAST ]]; then
+        read -p "Would you like to enable the configured server services such as ssh httpd? (y/n) " RESP
+        if [[ $RESP == [yY] ]]; then
+            fw_services
+        elif [[ $RESP != [nN] ]]; then
+            clear; echo "$WARN Bad input"; fw_pre_services
+        fi
+
+        read -p "Would you like to turn on OpenVPN now? (y/n) " RESP
+        if [[ $RESP == [yY] ]]; then
+            fw_vpn; 
+        elif [[ $RESP != [nN] ]]; then
+            clear; echo "$WARN Bad input"
+            fw_pre_services
+        fi
+    fi
+}
 
 fw_redundant()
 {
-	# Flush rules
-	echo "[$WARN] Flushing old rules"
-	/etc/init.d/iptables stop
-	$IPT -F
-	$IPT --delete-chain
-	$IPT $WAN -F
-	$IPT $WAN --delete-chain
-	$IPT -t filter --flush FORWARD
-	$IPT -t filter --flush INPUT
+    ## Flush rules
+    echo -ne "$INFO Flushing old rules\n"
+    /etc/init.d/iptables stop
+    $IPT -F
+    $IPT -t nat -F
+    $IPT --delete-chain
+    $IPT -t nat --delete-chain
+    $IPT -F FORWARD
+    $IPT -t filter --flush FORWARD
+    $IPT -t filter --flush INPUT
 
-	# Set default policies for all three default chains
-	echo "[$OK] Setting default policies"
-	$IPT -P OUTPUT ACCEPT
+    # Set default policies for all three default chains
+    echo -ne "$INFO Setting default policies\n"
+    $IPT -P OUTPUT ACCEPT
 
-	echo "[$OK] We will allow ip forwarding"
-	echo 1 > /proc/sys/net/ipv4/ip_forward
-	$IPT -P FORWARD ACCEPT
-	$IPT -F FORWARD
+    echo -ne "$INFO We will allow ip forwarding\n"
+    echo 1 > /proc/sys/net/ipv4/ip_forward
+    $IPT -P FORWARD ACCEPT
 
-	# Enable free use of loopback interfaces
-	echo "[$OK] Allowing loopback devices"
-	$IPT -A INPUT -i lo -j ACCEPT
-	$IPT -A OUTPUT -o lo -j ACCEPT
+    # Enable free use of loopback interfaces
+    echo -ne "$INFO  Allowing loopback devices\n"
+    $IPT -A INPUT -i lo -j ACCEPT
+    $IPT -A OUTPUT -o lo -j ACCEPT
 
-	# permit local network
-	echo "[$OK] Permit local network"
-	$IPT -A INPUT -i $LAN -j ACCEPT
-	$IPT -A OUTPUT -o $LAN -j ACCEPT
+    ## permit local network
+    echo -ne "$INFO  Permit local network\n"
+    $IPT -A INPUT -i $IFACE0 -j ACCEPT
+    $IPT -A OUTPUT -o $IFACE0 -j ACCEPT
 
-	# DHCP
-	echo "[$OK] Allowing DHCP server"
-	$IPT -A INPUT $WAN -p udp --sport 67 --dport 68 -j ACCEPT
+    ## DHCP
+    echo -ne "$INFO  Allowing DHCP server\n"
+    $IPT -A INPUT -t nat -p udp --sport 67 --dport 68 -j ACCEPT
 
-	# Allow Samba
-	echo "[$OK] Configuring Samba"
-	$IPT -A INPUT -i $LAN -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-	$IPT -A INPUT -i $LAN -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-	$IPT -A OUTPUT -o $LAN -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-	$IPT -A OUTPUT -o $LAN -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+    ## Allow Samba
+    echo -ne "$INFO Configuring Samba\n"
+    $IPT -A INPUT -i $IFACE0 -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+    $IPT -A INPUT -i $IFACE0 -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+    $IPT -A OUTPUT -o $IFACE0 -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+    $IPT -A OUTPUT -o $IFACE0 -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
 
-	read -p "Would you like to enable the configured server services such as ssh httpd? (y/n) " RESP
-	if [[ "$RESP" == [yY] ]]; then fw_services; fi # Future add error checking
-
-	read -p "[$OK] Would you like to turn on OpenVPN now? (y/n) " RESP
-	if [[ "$RESP" == [yY] ]]; then fw_vpn; fi # Future add error checking
+    fw_pre_services
 }
 
 fw_services()
 {
-	# Allow DNS Server
-	echo "[$OK] Allowing dns on port 53"
-	$IPT -A INPUT $WAN -p udp -m udp --dport 53 -j ACCEPT
+    ## Allow DNS Server
+    echo -ne "$INFO Allowing dns on port 53\n"
+    $IPT -A INPUT -t nat -p udp -m udp --dport 53 -j ACCEPT
 
-	# SSH (allows SSH through firewall, from anywhere on the WAN)
-	echo "[$OK] Allowing ssh on port 22"
-	$IPT -A INPUT $WAN -p tcp --dport 22 -j ACCEPT
+    ## SSH (allows SSH through firewall, from anywhere on the WAN)
+    echo -ne "$INFO Allowing ssh on port 22\n"
+    $IPT -A INPUT -t nat -p tcp --dport 22 -j ACCEPT
 
-	# Web server
-	echo "[$OK] Allowing http on port 80 and https on 443"
-	$IPT -A INPUT $WAN -p tcp -m multiport --dports 80,443 -j ACCEPT
-	return 0
+    ## Web server
+    echo -ne "$INFO Allowing http on port 80 and https on 443\n"
+    $IPT -A INPUT -t nat -p tcp -m multiport --dports 80,443 -j ACCEPT
 }
 
 vpn_confirmed()
 {
-	# Allow TUN interface connections to OpenVPN server
-	echo "[$OK] Allowing openVPN"
-	$IPT -A INPUT -i $VPN -j ACCEPT
-	# Allow TUN interface connections to be forwarded through other interfaces
-	$IPT -A FORWARD -i $VPN -j ACCEPT
-	# Allow TAP interface connections to OpenVPN server
-	$IPT -A INPUT -i $VPNI -j ACCEPT
-	# Allow TAP interface connections to be forwarded through other interfaces
-	$IPT -A FORWARD -i $VPNI -j ACCEPT
-	# I've been called into action
-	/etc/init.d/openvpn start
+    #Allow TUN interface connections to OpenVPN server
+    echo -ne "$INFO Allowing openVPN\n"
+    $IPT -A INPUT -i $VPN -j ACCEPT
+    #allow TUN interface connections to be forwarded through other interfaces
+    $IPT -A FORWARD -i $VPN -j ACCEPT
+    # Allow TAP interface connections to OpenVPN server
+    $IPT -A INPUT -i $VPNI -j ACCEPT
+    # Allow TAP interface connections to be forwarded through other interfaces
+    $IPT -A FORWARD -i $VPNI -j ACCEPT
+    # I've been called into action
+    echo -ne "$INFO OpenRC now bringing up OpenVPN\n"
+    /etc/init.d/openvpn start
 }
 
 fw_vpn()
 {
-	echo "[$WARN] Please pay close attention to the following when considering turning on openvpn."
-	echo "[$WARN] The gateway is still broken for dual nics while hosting services." # Do some work on custom gateway routing for this soon 10-22-2013"
-	echo "[$WARN] Be careful the VPN configuration could break your gateway for MiTM attacks and remote services."
-	echo "[$OK] This will be fixed in the future."
-	echo " You're advised not to use the vpn during attacks and only operate during daily activity at this time 10-29-2013"
-	read -p "[$OK] Do you still want to turn on OpenVPN now? (y/n) " RESP
-	if [[ "$RESP" = [yY] ]]; then vpn_confirmed; fi # Future add error checking
+    echo "$INFO Please pay close attention to the following when considering turning on openvpn."
+    echo "$INFO The gateway is still broken for dual nics while hosting services." # Do some work on custom gateway routing for this soon"
+    echo "$INFO Be careful the VPN configuration could break your gateway for MiTM attacks and remote services."
+    echo "$INFO This will be fixed in the future."
+    echo " You're advised not to use the vpn during attacks and only operate during daily activity at this time"
+    read -p "$INFO Do you still want to turn on OpenVPN now? (y/n) " RESP
+    if [[ $RESP == [yY] ]]; then 
+        vpn_confirmed
+    elif [[ $RESP != [nN] ]]; then
+        echo "$WARN Bad input"
+        fw_vpn
+    fi
 }
 
 fw_closure()
 {
-	# drop everything else arriving from WAN on local interfaces
-	echo -e "\n[$OK] Drop everything else"
-	$IPT -A INPUT -i $LAN -j LOG
-	$IPT -A INPUT -i $LAN -j DROP
-	$IPT -A INPUT -i $LAN2 -j LOG
-	$IPT -A INPUT -i $LAN2 -j DROP
-	#
-	# Save settings
-	#
-	echo "[$OK] Saving settings"
-	/etc/init.d/iptables save
-	/etc/init.d/iptables start
-
-	# list the iptable rules as confirmation
-	echo "[$OK] Listing the iptables rules as confirmation"
-	$IPT -L -v
+    ## drop everything else arriving from WAN on local interfaces
+    echo -ne "$INFO Drop everything else\n"
+    $IPT -A INPUT -i $IFACE0 -j LOG
+    $IPT -A INPUT -i $IFACE0 -j DROP
+    #
+    # Save settings
+    #
+    echo -ne "$INFO Saving settings and bringing iptables back online\n"
+    /etc/init.d/iptables save
+    echo ""
+    /etc/init.d/iptables start
+    
+    ## list the iptables rules as confirmation
+    echo -ne "$INFO Listing the iptables rules as confirmation\n"
+    $IPT -L -v
 }
 
-hacking()
+ap()
 {
-	read -p "[$OK] Are we using airbase? (y/n) " RESP
-	if [[ "$RESP" == [yY] ]]; then
-		echo -e "[$OK] Allowing wirless for airbase, routing $AP through $LAN\nbe sure airbase was configured for $AP and $LAN as the output\notherwise adjust these settings"
-		$IPT -A FORWARD -i $AP -o $LAN -j ACCEPT
-		$IPT -A FORWARD -i $LAN -o $AP -j ACCEPT
-	else read -p "[$OK] Are we using hostapd? (y/n) " RESP then
-		if [[ "$RESP" == [yY] ]]; then
-		echo -e "[$OK] Allowing wireless for hostapd, routing $WLAN through $LAN\nbe sure hostapd was configured for $WLAN and $LAN as the output\notherwise adjust these settings"
-		$IPT -A FORWARD -i $WLAN -o $LAN -j ACCEPT
-		$IPT -A FORWARD -i $LAN -o $WLAN -j ACCEPT
-		fi
-	fi
-	
-	read -p "[$OK] Are we using sslstrip? (y/n) " RESP
-	if [[ "$RESP" == [yY] ]]; then
-		echo "[$OK] Forwarding nat traffic to sslstrip server on p10000"
-		$IPT $WAN -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-		$IPT $WAN -A PREROUTING -p tcp --destination-port 443 -j REDIRECT --to-port 10000
-		$IPT $WAN -A OUTPUT -p tcp --dport 80 -j DNAT --to-destination 127.0.0.1:10000
-		$IPT $WAN -A OUTPUT -p tcp --dport 443 -j DNAT --to-destination 127.0.0.1:10000
-		echo -e "\n[$WARN] Here are some reminders, first setup spoofing. This will be automagic in the future"
-		echo -e "\n[$OK] arpspoof -i wlan0/eth0 192.168.1.10 192.168.1.1 \n where 192.168.1.10 is the victim and 192.168.1.1 is the gateway ip address."
-		echo -e "\nThis means on this interface intercept traffic from *.10 that is using gateway *.1 \n * now run sslstrip"
-		echo -e "\n[$OK] python /usr/lib64/sslstrip/sslstrip.py -k -f lock.ico \n * load sslstrip and use the provided lock.ico icon as a replacement if need be."
-		echo -e "\nIf you setup ettercap for MiTM arp spoofing you don't need arpspoof. You must manually edit the ettercap config for this.\n Or just run ettercap and let it sniff arpspoof+sslstrips work"
-	fi
+    read -p "[$OK] Are we using airbase? (y/n) " RESP
+    if [[ "$RESP" == [yY] ]]; then
+        echo -e "[$OK] Allowing wirless for airbase, routing $AP through $LAN\nbe sure airbase was configured for $AP and $LAN as the output\notherwise adjust these settings"
+        $IPT -A FORWARD -i $AP -o $LAN -j ACCEPT
+        $IPT -A FORWARD -i $LAN -o $AP -j ACCEPT
+    else read -p "[$OK] Are we using hostapd? (y/n) " RESP then
+        if [[ "$RESP" == [yY] ]]; then
+        echo -e "[$OK] Allowing wireless for hostapd, routing $WLAN through $LAN\nbe sure hostapd was configured for $WLAN and $LAN as the output\notherwise adjust these settings"
+        $IPT -A FORWARD -i $WLAN -o $LAN -j ACCEPT
+        $IPT -A FORWARD -i $LAN -o $WLAN -j ACCEPT
+        fi
+    fi
 }
 
 fw_up()
 { 
-	fw_redundant
-	echo -e "[$OK] It's time for specialty hacking configurations"
-	echo -e "These settings are not default as they may break daily activity."
-	read -p "[$OK] Are we doing any hacking? (y/n) " RESP
-	if [[ "$RESP" == [yY] ]]; then
-		$IPT $WAN -A POSTROUTING -o $LAN -j MASQUERADE
-		hacking
-	fi
-	fw_closure
+    fw_redundant
+    X=$(grep BRIDGED\= n4p.conf | awk -F\= '{print $2}')
+    XX=$(grep AP\= n4p.conf | awk -F\= '{print $2}')
+    if [[ $X == "False" ]]; then
+        if [[ $XX == "AIRBASE" ]]; then
+            echo -ne "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
+            $IPT -t nat -A POSTROUTING -o $IFACE0 -j MASQUERADE
+            $IPT -A FORWARD -i $AP -o $IFACE0 -j ACCEPT
+            $IPT -A FORWARD -i $IFACE0 -o $AP -j ACCEPT
+        elif [[ $XX == "HOSTAPD" ]]; then
+            echo -ne "$INFO Allowing wirless for hostapd, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
+            $IPT -A FORWARD -i $IFACE1 -o $IFACE0 -j ACCEPT
+            $IPT -A FORWARD -i $IFACE0 -o $IFACE1 -j ACCEPT
+        else
+            echo "[$WARN] ERROR in AP configuration file, no AP found"
+        fi
+    fi
+    ap
+    fw_closure
 }
 
 fw_down()
 { 
-	fw_redundant
-	echo "[$WARN] You are no longer bridged! If you need bridging still you will need to add that rule yourself."
-	echo "[$OK] Defaults loaded for daily use."
-	fw_closure
+    fw_redundant
+    echo -e "$INFO Defaults loaded for daily use.\n"
+    fw_closure
 }
 
 start()
 {
-	read -p "[$OK] Are we going up or down? (Up/Down) " RESP
-	if [[ "$RESP" == "Up" ]]; then
-		fw_up
-	elif [[ "$RESP" == "Down" ]]; then
-		fw_redundant
-		echo "[$WARN] You are no longer bridged! If you need bridging still you will need to add that rule yourself."
-		echo "[$OK] Defaults loaded for daily use."
-		fw_closure
-	else
-		clear; echo "Case sensitive response required"; start
-	fi
+    read -p "[$OK] Are we using n4p Access Point? (Y/N) " RESP
+    if [[ "$RESP" == [Yy] ]]; then
+        fw_up
+    elif [[ "$RESP" == [Nn] ]]; then
+        fw_redundant
+        echo "[$WARN] You are no longer bridged! If you need bridging still you will need to add that rule yourself."
+        echo "[$OK] Defaults loaded for daily use."
+        fw_closure
+    else
+        clear; echo -e "Invalid response\n"; start
+    fi
 }
 start

@@ -1,7 +1,32 @@
-#0.7
-#Increased attack vector princibles with ettercap sslstrip and logging with further alterations for saved user analysis after attacks.
+0.7
+Intergrated SSLstrip 
 
-#Intergrated SSLstrip and ettercap use
+Added Ettercap use
+
+Added ARP Spoofing support
+
+Multiple monitoring capabilities added
+
+Did away with fast options and help option
+
+Introduced config file based operations
+
+Moved firewall settings into its own script
+
+Added reconisins for handshake based cracking
+
+Added pcap cracking methods
+
+Set basis for hostapd reintegration
+
+Trimmed code further
+
+Add Aireplay-ng deauthentication
+
+Added logos
+
+file name changes made
+
 
 0.6
 Added a kickstart script in front of the previous n4p.sh and renamed it to n4p_main.sh to work around an xdisplay issue.
