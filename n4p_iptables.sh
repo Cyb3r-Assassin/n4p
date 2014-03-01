@@ -14,14 +14,38 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
+get_name() # Retrieve the config values
+{
+    USE=$(grep $1 $DIR/n4p.conf | awk -F= '{print $2}')
+}
 
 IPT="/sbin/iptables"
 AP="at0"
 VPN="tun0"
 VPNI="tap+"
 sessionfolder=/tmp/n4p
+get_name "IFACE0="; IFACE0=$USE
+get_name "IFACE1="; IFACE1=$USE
+get_name "AP="; UAP=$USE
+get_name "BRIDGED="; BRIDGED=$USE
+get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
+# Text color variables
+TXT_BLD=$(tput bold)             # Bold
+BLD_RED=${txtbld}$(tput setaf 1) # red
+BLD_YEL=${txtbld}$(tput setaf 2) # Yellow
+BLD_ORA=${txtbld}$(tput setaf 3) # orange
+BLD_BLU=${txtbld}$(tput setaf 4) # blue
+BLD_PUR=${txtbld}$(tput setaf 5) # purple
+BLD_TEA=${txtbld}$(tput setaf 6) # teal
+BLD_WHT=${txtbld}$(tput setaf 7) # white
+TXT_RST=$(tput sgr0)             # Reset
+INFO=${BLD_WHT}*${TXT_RST}       # Feedback
+QUES=${BLD_BLU}?${TXT_RST}       # Questions
+PASS="${BLD_TEA}[${TXT_RSR}${BLD_WHT} OK ${TXT_RST}${BLD_TEA}]${TXT_RST}"
+WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
 echo "$(cat $DIR/firewall.logo)"; sleep 2.5
+
 ##################################################################
 ######################Build the firewall##########################
 ##################################################################
@@ -151,9 +175,14 @@ fw_closure()
     echo ""
     /etc/init.d/iptables start
     
-    ## list the iptables rules as confirmation
     echo -ne "$INFO Listing the iptables rules as confirmation\n"
-    $IPT -L -v
+    time=12
+    while [[ $time > 0 ]]; do
+	$IPT -L -v
+        echo "Window closing automatically in $time seconds."
+        sleep 1
+        time=$(($time-1))
+    done
 }
 
 ap()
@@ -161,13 +190,13 @@ ap()
     read -p "[$OK] Are we using airbase? (y/n) " RESP
     if [[ "$RESP" == [yY] ]]; then
         echo -e "[$OK] Allowing wirless for airbase, routing $AP through $LAN\nbe sure airbase was configured for $AP and $LAN as the output\notherwise adjust these settings"
-        $IPT -A FORWARD -i $AP -o $LAN -j ACCEPT
-        $IPT -A FORWARD -i $LAN -o $AP -j ACCEPT
+        $IPT -A FORWARD -i $AP -o $IFACE0 -j ACCEPT
+        $IPT -A FORWARD -i $IFACE0 -o $AP -j ACCEPT
     else read -p "[$OK] Are we using hostapd? (y/n) " RESP then
         if [[ "$RESP" == [yY] ]]; then
         echo -e "[$OK] Allowing wireless for hostapd, routing $WLAN through $LAN\nbe sure hostapd was configured for $WLAN and $LAN as the output\notherwise adjust these settings"
-        $IPT -A FORWARD -i $WLAN -o $LAN -j ACCEPT
-        $IPT -A FORWARD -i $LAN -o $WLAN -j ACCEPT
+        $IPT -A FORWARD -i $IFACE1 -o $IFACE0 -j ACCEPT
+        $IPT -A FORWARD -i $IFACE0 -o $IFACE1 -j ACCEPT
         fi
     fi
 }
