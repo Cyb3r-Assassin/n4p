@@ -1,3 +1,20 @@
+0.8
+Allowed airmon-zc to remain active between menu navigation / attacks as long as no child functions of main menu are closed
+
+Adjust some methodology of the attacks. Just fluency stuff
+
+Fixed a title name
+
+Fixed where I forgot then -a bssid into the airbase option for handshake attacks
+
+Finished selectable options for monitoring modes "requires +extras use flag"
+
+Added word list file option for cracking
+
+Cleaned up some minor code sections that started to get away from me as became sleep deprived
+
+Updated some code to comply with airmon-zc changes
+
 0.7
 Intergrated SSLstrip 
 

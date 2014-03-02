@@ -24,42 +24,41 @@ BLD_RED=${txtbld}$(tput setaf 1) # red
 TXT_RST=$(tput sgr0)             # Reset
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
-echo "${BLD_TEA}$(cat $DIR/recon.logo)${TXT_RST}"; sleep 2.5
+[[ $2 == "recon" ]] && echo "${BLD_TEA}$(cat $DIR/recon.logo)${TXT_RST}"; sleep 2.5 || echo "${BLD_TEA}$(cat $DIR/dump.logo)${TXT_RST}"; sleep 2.5
+
+sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
+if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
+    	
+if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
 
 get_name()
 {
     USE=$(grep $1 $DIR/n4p.conf | awk -F= '{print $2}')
 }
 
-get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
-get_name "CHAN="; CHAN=$USE
-
-sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
-    if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
-    	
-if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
-
 get_state() # Retrieve the state of interfaces
 {
     STATE=$(ip addr list | grep -i $1 | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2)
 }
 
+get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
+get_name "CHAN="; CHAN=$USE
+
 doit()
 {
-	get_state "$IFACE1"
-
-	while [[ $STATE != 'DOWN' ]]; do 
-		ip link set "$IFACE1" down
-	done
-	echo -n "$INFO Airmon-zc comming up"
-	airmon-zc check kill
-	sleep 0.5
-	airmon-zc start $IFACE1
+	if [[ -z $(ip addr | grep -i "$MON") ]]; then 
+        iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
+        echo -n "$INFO Airmon-zc comming up"
+        airmon-zc check kill
+        sleep 0.5
+        airmon-zc start $IFACE1 
+    fi
 	sleep 1
+
     if [[ $JOB == "recon" ]]; then
 	    xterm -hold -bg black -fg blue -T "Recon" -geometry 90x20 -e airodump-ng $MON &>/dev/null &
 	else
-	    xterm -hold -bg black -fg blue -T "Recon" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN -w $sessionfolder/$VICTIM_BSSID.pcap $MON &>/dev/null &
+	    xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN -w $sessionfolder/$VICTIM_BSSID $MON &>/dev/null &
     fi
 }
 
@@ -72,6 +71,8 @@ keepalive()
 killAll()
 {
 	airmon-zc stop $MON
+	echo "${BLD_TEA}$(cat $DIR/die.logo)${TXT_RST}"
+    sleep 2
 	exit 0
 }
 trap killAll INT HUP;
