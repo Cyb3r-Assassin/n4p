@@ -186,38 +186,16 @@ fw_closure()
     done
 }
 
-ap()
-{
-    if [[ $UAP == "AIRBASE" ]]; then
-        echo -e "[$OK] Allowing wirless for airbase, routing $AP through $LAN\nbe sure airbase was configured for $AP and $LAN as the output\notherwise adjust these settings"
-        $IPT -A FORWARD -i $AP -o $IFACE0 -j ACCEPT
-        $IPT -A FORWARD -i $IFACE0 -o $AP -j ACCEPT
-    elif [[ $UAP == "HOSTAPD" ]]; then
-        echo -e "[$OK] Allowing wireless for hostapd, routing $WLAN through $LAN\nbe sure hostapd was configured for $WLAN and $LAN as the output\notherwise adjust these settings"
-        $IPT -A FORWARD -i $IFACE1 -o $IFACE0 -j ACCEPT
-        $IPT -A FORWARD -i $IFACE0 -o $IFACE1 -j ACCEPT
-    else
-        echo "Invalid Config entry for AP"
-    fi
-
-    if [[ $Attack == "SslStrip" ]]; then
-        $IPT -t nat -A PREROUTING -p tcp --destination-port 443 -j REDIRECT --to-port 8080
-        $IPT -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 8080
-    fi
-}
-
 fw_up()
 { 
     fw_redundant
-    X=$(grep BRIDGED\= /etc/n4p/n4p.conf | awk -F\= '{print $2}')
-    XX=$(grep AP\= /etc/n4p/n4p.conf | awk -F\= '{print $2}')
-    if [[ $X == "False" ]]; then
-        if [[ $XX == "AIRBASE" ]]; then
+    if [[ $BRIDGED == "False" ]]; then
+        if [[ $UAP == "AIRBASE" ]]; then
             echo -ne "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
             $IPT -t nat -A POSTROUTING -o $IFACE0 -j MASQUERADE
             $IPT -A FORWARD -i $AP -o $IFACE0 -j ACCEPT
             $IPT -A FORWARD -i $IFACE0 -o $AP -j ACCEPT
-        elif [[ $XX == "HOSTAPD" ]]; then
+        elif [[ $UAP == "HOSTAPD" ]]; then
             echo -ne "$INFO Allowing wirless for hostapd, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
             $IPT -A FORWARD -i $IFACE1 -o $IFACE0 -j ACCEPT
             $IPT -A FORWARD -i $IFACE0 -o $IFACE1 -j ACCEPT
@@ -225,7 +203,11 @@ fw_up()
             echo "[$WARN] ERROR in AP configuration file, no AP found"
         fi
     fi
-    ap
+
+    if [[ $ATTACK == "SslStrip" ]]; then
+        $IPT -t nat -A PREROUTING -p tcp --destination-port 443 -j REDIRECT --to-port 8080
+        $IPT -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 8080
+    fi
     fw_closure
 }
 
@@ -243,7 +225,6 @@ start()
         fw_up
     elif [[ "$RESP" == [Nn] ]]; then
         fw_redundant
-        echo "[$WARN] You are no longer bridged! If you need bridging still you will need to add that rule yourself."
         echo "[$OK] Defaults loaded for daily use."
         fw_closure
     else
