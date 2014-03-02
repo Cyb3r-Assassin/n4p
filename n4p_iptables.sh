@@ -29,6 +29,7 @@ get_name "IFACE1="; IFACE1=$USE
 get_name "AP="; UAP=$USE
 get_name "BRIDGED="; BRIDGED=$USE
 get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
+get_name "ATTACK="; ATTACK=$USE
 # Text color variables
 TXT_BLD=$(tput bold)             # Bold
 BLD_RED=${txtbld}$(tput setaf 1) # red
@@ -187,17 +188,21 @@ fw_closure()
 
 ap()
 {
-    read -p "[$OK] Are we using airbase? (y/n) " RESP
-    if [[ "$RESP" == [yY] ]]; then
+    if [[ $UAP == "AIRBASE" ]]; then
         echo -e "[$OK] Allowing wirless for airbase, routing $AP through $LAN\nbe sure airbase was configured for $AP and $LAN as the output\notherwise adjust these settings"
         $IPT -A FORWARD -i $AP -o $IFACE0 -j ACCEPT
         $IPT -A FORWARD -i $IFACE0 -o $AP -j ACCEPT
-    else read -p "[$OK] Are we using hostapd? (y/n) " RESP then
-        if [[ "$RESP" == [yY] ]]; then
+    elif [[ $UAP == "HOSTAPD" ]]; then
         echo -e "[$OK] Allowing wireless for hostapd, routing $WLAN through $LAN\nbe sure hostapd was configured for $WLAN and $LAN as the output\notherwise adjust these settings"
         $IPT -A FORWARD -i $IFACE1 -o $IFACE0 -j ACCEPT
         $IPT -A FORWARD -i $IFACE0 -o $IFACE1 -j ACCEPT
-        fi
+    else
+        echo "Invalid Config entry for AP"
+    fi
+
+    if [[ $Attack == "SslStrip" ]]; then
+        $IPT -t nat -A PREROUTING -p tcp --destination-port 443 -j REDIRECT --to-port 8080
+        $IPT -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 8080
     fi
 }
 

