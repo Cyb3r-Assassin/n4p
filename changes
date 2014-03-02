@@ -1,5 +1,14 @@
 0.9
-fixed a big with monitor device assignment when not using wlan0
+
+Fixed a bug with monitor device assignment when not using wlan0
+
+Removed airmon-zc check kill, it's no longer needed
+
+Added EXIT option from menu.
+
+Prevented *.cap files from enumerating out of application scope.
+
+Fixed file name issue under cracking.
 
 0.8
 Allowed airmon-zc to remain active between menu navigation / attacks as long as no child functions of main menu are closed

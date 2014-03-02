@@ -47,7 +47,7 @@ menu()
     +======ooO--(_)--Ooo-ooO--(_)--Ooo-ooO--(_)--Ooo======+
     | ${TXT_RST}${BLD_TEA}1${TXT_RST}${BLD_WHT})  Perform wifi radious recon                      |
     | ${TXT_RST}${BLD_TEA}2${TXT_RST}${BLD_WHT})  Set devices for use and attack                  |
-    | ${TXT_RST}${BLD_TEA}3${TXT_RST}${BLD_WHT})  Airodump-ng target for pcap capture crack       |
+    | ${TXT_RST}${BLD_TEA}3${TXT_RST}${BLD_WHT})  Airodump-ng target for .cap capture crack       |
     | ${TXT_RST}${BLD_TEA}4${TXT_RST}${BLD_WHT})  Aircrack-ng the new captured pcap               |
     | ${TXT_RST}${BLD_TEA}5${TXT_RST}${BLD_WHT})  Launch Access Point                             |
     | ${TXT_RST}${BLD_TEA}6${TXT_RST}${BLD_WHT})  Enumerate the Firewall ${TXT_RST}${BLD_TEA}(Required after option 4)${TXT_RST}${BLD_WHT}|
@@ -55,9 +55,12 @@ menu()
     | ${TXT_RST}${BLD_TEA}8${TXT_RST}${BLD_WHT})  Start SSL Strip                                 |
     | ${TXT_RST}${BLD_TEA}9${TXT_RST}${BLD_WHT})  Start Ettercap Sniff Attack                     |
     | ${TXT_RST}${BLD_TEA}10${TXT_RST}${BLD_WHT}) ARP the Network                                 |
+    | ${TXT_RST}${BLD_TEA}0${TXT_RST}${BLD_WHT}) EXIT                                             |
     +=====================================================+${TXT_RST}"
     read -p "Option: " choice
-    if [[ $choice == 1 ]]; then
+    if [[ $choice == 0 ]]; then
+        killemAll
+    elif [[ $choice == 1 ]]; then
         get_name "IFACE1="; IFACE1=$USE
     	sudo xterm -bg black -fg blue -T "Recon" -geometry 90x20 -e $DIR/./recon.sh $IFACE1 recon &>/dev/null &
     elif [[ $choice == 2 ]]; then
@@ -68,7 +71,7 @@ menu()
     elif [[ $choice == 4 ]]; then
         get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
         get_name "WORD_LIST="; WORD_LIST=$USE
-        sudo xterm -hold -bg black -fg blue -T "Cracking" -geometry 90x20 -e aircrack-ng $sessionfolder/$VICTIM_BSSID.cap -w $WORD_LIST &>/dev/null &
+        sudo xterm -hold -bg black -fg blue -T "Cracking" -geometry 90x20 -e aircrack-ng $sessionfolder/${VICTIM_BSSID}-01.cap -w $WORD_LIST &>/dev/null &
     elif [[ $choice == 5 ]]; then
     	sudo xterm -bg black -fg blue -T "Airbase" -geometry 90x20 -e $DIR/./n4p_main.sh &>/dev/null &
     elif [[ $choice == 6 ]]; then
@@ -107,6 +110,7 @@ menu()
 
 killemAll()
 {
+    echo ""
     xhost -
     echo "${BLD_TEA}$(cat /usr/share/n4p/zed.logo)${TXT_RST}"
     exit 0

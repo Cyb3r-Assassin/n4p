@@ -56,6 +56,7 @@ doit()
     if [[ $JOB == "recon" ]]; then
 	    xterm -hold -bg black -fg blue -T "Recon" -geometry 90x20 -e airodump-ng $MON &>/dev/null &
 	else
+        rm $sessionfolder/${VICTIM_BSSID}*
 	    xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN -w $sessionfolder/$VICTIM_BSSID $MON &>/dev/null &
     fi
 }
