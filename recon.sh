@@ -50,7 +50,7 @@ doit()
 	if [[ -z $(ip addr | grep -i "$MON") ]]; then 
         iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
         echo -n "$INFO Airmon-zc comming up"
-        airmon-zc check kill
+        airmon-zc check kill $IFACE1
         sleep 0.5
         airmon-zc start $IFACE1 
     fi

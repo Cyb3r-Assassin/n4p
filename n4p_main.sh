@@ -190,7 +190,7 @@ startairbase()
 {
     if [[ -z $(ip addr | grep -i "$MON") ]]; then 
         echo -n "$INFO Airmon-zc comming up"
-        airmon-zc check kill
+        airmon-zc check kill $IFACE1
         sleep 0.5
         airmon-zc start $IFACE1 
     fi
