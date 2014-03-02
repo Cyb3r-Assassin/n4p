@@ -44,7 +44,7 @@ QUES=${BLD_BLU}?${TXT_RST}       # Questions
 PASS="${BLD_TEA}[${TXT_RSR}${BLD_WHT} OK ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
-echo "$(cat /usr/share/firewall.logo)"; sleep 2.5
+echo "$(cat /usr/share/n4p/firewall.logo)"; sleep 2.5
 
 ##################################################################
 ######################Build the firewall##########################

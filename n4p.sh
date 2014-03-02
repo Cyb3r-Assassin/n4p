@@ -25,7 +25,7 @@ TXT_RST=$(tput sgr0)             # Reset
 EYES=$(tput setaf 6)
 AP_GATEWAY=$(grep routers /etc/n4p/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
 
-echo "${BLD_TEA}$(cat /usr/share/opening.logo)${TXT_RST}"; sleep 1.5
+echo "${BLD_TEA}$(cat /usr/share/n4p/opening.logo)${TXT_RST}"; sleep 1.5
 
 sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
 if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
@@ -104,7 +104,7 @@ menu()
 killemAll()
 {
     xhost -
-    echo "${BLD_TEA}$(cat /usr/share/zed.logo)${TXT_RST}"
+    echo "${BLD_TEA}$(cat /usr/share/n4p/zed.logo)${TXT_RST}"
     exit 0
 }
 

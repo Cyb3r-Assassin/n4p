@@ -106,7 +106,7 @@ depends()
 }
 banner()
 { 
-    echo "${BLD_TEA}$(cat /usr/share/auth.logo)${TXT_RST}"; sleep 2
+    echo "${BLD_TEA}$(cat /usr/share/n4p/auth.logo)${TXT_RST}"; sleep 2
 }
 setupenv()
 {
