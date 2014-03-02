@@ -64,7 +64,7 @@ depends()
 {
     IPT="/sbin/iptables"
     AP="at0"
-    MON="wlan0mon"
+    MON="$IFACE1mon"
     VPN="tun0"
     VPNI="tap+"
     get_name "IFACE0="; IFACE0=$USE

@@ -15,7 +15,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 IFACE1=$1
 JOB=$2
-MON="wlan0mon"
+MON="$IFACE1mon"
 # Text color variables
 TXT_BLD=$(tput bold)             # Bold
 BLD_PUR=${txtbld}$(tput setaf 5) # purple

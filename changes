@@ -1,5 +1,5 @@
-#0.9
-#Finished adding Hostapd
+0.9
+fixed a big with monitor device assignment when not using wlan0
 
 0.8
 Allowed airmon-zc to remain active between menu navigation / attacks as long as no child functions of main menu are closed
@@ -13,6 +13,10 @@ Fixed where I forgot the -a bssid into the airbase option for handshake attacks
 Finished selectable options for monitoring modes "requires +extras use flag"
 
 Added word list file option for cracking
+
+Added SslStrip option under ATTACK option of n4p.conf
+
+Updated firewall questioning
 
 Cleaned up some minor code sections that started to get away from me as became sleep deprived
 

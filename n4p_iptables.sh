@@ -127,7 +127,7 @@ fw_services()
 
     ## Web server
     echo -ne "$INFO Allowing http on port 80 and https on 443\n"
-    $IPT -A INPUT -t nat -p tcp -m multiport --dports 80,443 -j ACCEPT
+    $IPT -A INPUT -t nat -p tcp -m multiport --dports 80,443,8080 -j ACCEPT
 }
 
 vpn_confirmed()
@@ -188,7 +188,6 @@ fw_closure()
 
 fw_up()
 { 
-    fw_redundant
     if [[ $BRIDGED == "False" ]]; then
         if [[ $UAP == "AIRBASE" ]]; then
             echo -ne "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
@@ -222,6 +221,7 @@ start()
 {
     read -p "[$OK] Are we using n4p Access Point? (Y/N) " RESP
     if [[ "$RESP" == [Yy] ]]; then
+        fw_redundant
         fw_up
     elif [[ "$RESP" == [Nn] ]]; then
         fw_redundant

