@@ -13,8 +13,19 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
+get_name()
+{
+    USE=$(grep $1 /etc/n4p/n4p.conf | awk -F= '{print $2}')
+}
+
+get_state() # Retrieve the state of interfaces
+{
+    STATE=$(ip addr list | grep -i $1 | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2)
+}
+
 IFACE1=$1
 JOB=$2
+get_name "IFACE1="; IFACE1=$USE
 MON="$IFACE1mon"
 # Text color variables
 TXT_BLD=$(tput bold)             # Bold
@@ -30,16 +41,6 @@ sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then bu
 if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
     	
 if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
-
-get_name()
-{
-    USE=$(grep $1 /etc/n4p/n4p.conf | awk -F= '{print $2}')
-}
-
-get_state() # Retrieve the state of interfaces
-{
-    STATE=$(ip addr list | grep -i $1 | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2)
-}
 
 get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
 get_name "CHAN="; CHAN=$USE

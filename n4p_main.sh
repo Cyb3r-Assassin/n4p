@@ -62,11 +62,6 @@ get_RCstatus() # What is the status from OpenRC of the service
 
 depends()
 {
-    IPT="/sbin/iptables"
-    AP="at0"
-    MON="$IFACE1mon"
-    VPN="tun0"
-    VPNI="tap+"
     get_name "IFACE0="; IFACE0=$USE
     get_name "IFACE1="; IFACE1=$USE
     get_name "ESSID="; ESSID=$USE
@@ -83,6 +78,11 @@ depends()
     get_name "TYPE="; TYPE=$USE
     get_name "ENCRYPTION="; ENCRYPTION=$USE
     get_name "MONITOR_MODE="; MONITOR_MODE=$USE
+    IPT="/sbin/iptables"
+    AP="at0"
+    MON="$IFACE1mon"
+    VPN="tun0"
+    VPNI="tap+"
     AP_GATEWAY=$(grep routers /etc/n4p/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
     AP_SUBNET=$(grep netmask /etc/n4p/dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
     AP_IP=$(grep netmask /etc/n4p/dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
