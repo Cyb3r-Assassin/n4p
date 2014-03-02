@@ -1,3 +1,6 @@
+#0.9
+#Finished adding Hostapd
+
 0.8
 Allowed airmon-zc to remain active between menu navigation / attacks as long as no child functions of main menu are closed
 
@@ -5,7 +8,7 @@ Adjust some methodology of the attacks. Just fluency stuff
 
 Fixed a title name
 
-Fixed where I forgot then -a bssid into the airbase option for handshake attacks
+Fixed where I forgot the -a bssid into the airbase option for handshake attacks
 
 Finished selectable options for monitoring modes "requires +extras use flag"
 
