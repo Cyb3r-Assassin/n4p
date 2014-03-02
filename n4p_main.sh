@@ -80,7 +80,7 @@ depends()
     get_name "MONITOR_MODE="; MONITOR_MODE=$USE
     IPT="/sbin/iptables"
     AP="at0"
-    MON="$IFACE1mon"
+    MON="${IFACE1}mon"
     VPN="tun0"
     VPNI="tap+"
     AP_GATEWAY=$(grep routers /etc/n4p/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)

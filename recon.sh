@@ -26,7 +26,7 @@ get_state() # Retrieve the state of interfaces
 IFACE1=$1
 JOB=$2
 get_name "IFACE1="; IFACE1=$USE
-MON="$IFACE1mon"
+MON="${IFACE1}mon"
 # Text color variables
 TXT_BLD=$(tput bold)             # Bold
 BLD_PUR=${txtbld}$(tput setaf 5) # purple

