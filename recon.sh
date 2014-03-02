@@ -24,7 +24,7 @@ BLD_RED=${txtbld}$(tput setaf 1) # red
 TXT_RST=$(tput sgr0)             # Reset
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
-[[ $2 == "recon" ]] && echo "${BLD_TEA}$(cat $DIR/recon.logo)${TXT_RST}"; sleep 2.5 || echo "${BLD_TEA}$(cat $DIR/dump.logo)${TXT_RST}"; sleep 2.5
+[[ $2 == "recon" ]] && echo "${BLD_TEA}$(cat /usr/share/recon.logo)${TXT_RST}"; sleep 2.5 || echo "${BLD_TEA}$(cat /usr/share/dump.logo)${TXT_RST}"; sleep 2.5
 
 sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
 if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
@@ -33,7 +33,7 @@ if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snack
 
 get_name()
 {
-    USE=$(grep $1 $DIR/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 /etc/n4p/n4p.conf | awk -F= '{print $2}')
 }
 
 get_state() # Retrieve the state of interfaces
@@ -71,7 +71,7 @@ keepalive()
 killAll()
 {
 	airmon-zc stop $MON
-	echo "${BLD_TEA}$(cat $DIR/die.logo)${TXT_RST}"
+	echo "${BLD_TEA}$(cat /usr/share/die.logo)${TXT_RST}"
     sleep 2
 	exit 0
 }

@@ -42,7 +42,7 @@ next() {
 #######################################
 get_name() # Retrieve the config values
 {
-    USE=$(grep $1 $DIR/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 /etc/n4p/n4p.conf | awk -F= '{print $2}')
 }
 
 get_state() # Retrieve the state of interfaces
@@ -83,10 +83,10 @@ depends()
     get_name "TYPE="; TYPE=$USE
     get_name "ENCRYPTION="; ENCRYPTION=$USE
     get_name "MONITOR_MODE="; MONITOR_MODE=$USE
-    AP_GATEWAY=$(grep routers $DIR/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
-    AP_SUBNET=$(grep netmask $DIR/dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
-    AP_IP=$(grep netmask $DIR/dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
-    AP_BROADCAST=$(grep broadcast-address $DIR/dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+    AP_GATEWAY=$(grep routers /etc/n4p/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+    AP_SUBNET=$(grep netmask /etc/n4p/dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
+    AP_IP=$(grep netmask /etc/n4p/dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
+    AP_BROADCAST=$(grep broadcast-address /etc/n4p/dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
     # Text color variables
     TXT_UND=$(tput sgr 0 1)          # Underline
     TXT_BLD=$(tput bold)             # Bold
@@ -106,7 +106,7 @@ depends()
 }
 banner()
 { 
-    echo "${BLD_TEA}$(cat $DIR/auth.logo)${TXT_RST}"; sleep 2
+    echo "${BLD_TEA}$(cat /usr/share/auth.logo)${TXT_RST}"; sleep 2
 }
 setupenv()
 {
@@ -344,7 +344,7 @@ dhcp()
             /etc/init.d/net.$BRIDGE start
         fi
     else # We apparently don't have the proper configuration file. Make the changes and action again
-        find * -wholename $DIR/dhcpd.conf -exec cat {} >> /etc/dhcp/dhcpd.conf \;
+        find * -wholename /etc/n4p/dhcpd.conf -exec cat {} >> /etc/dhcp/dhcpd.conf \;
         dhcp
     fi
 }

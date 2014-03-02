@@ -16,7 +16,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 get_name() # Retrieve the config values
 {
-    USE=$(grep $1 $DIR/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 /etc/n4p/n4p.conf | awk -F= '{print $2}')
 }
 
 IPT="/sbin/iptables"
@@ -44,7 +44,7 @@ QUES=${BLD_BLU}?${TXT_RST}       # Questions
 PASS="${BLD_TEA}[${TXT_RSR}${BLD_WHT} OK ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
-echo "$(cat $DIR/firewall.logo)"; sleep 2.5
+echo "$(cat /usr/share/firewall.logo)"; sleep 2.5
 
 ##################################################################
 ######################Build the firewall##########################
@@ -204,8 +204,8 @@ ap()
 fw_up()
 { 
     fw_redundant
-    X=$(grep BRIDGED\= $DIR/n4p.conf | awk -F\= '{print $2}')
-    XX=$(grep AP\= $DIR/n4p.conf | awk -F\= '{print $2}')
+    X=$(grep BRIDGED\= /etc/n4p/n4p.conf | awk -F\= '{print $2}')
+    XX=$(grep AP\= /etc/n4p/n4p.conf | awk -F\= '{print $2}')
     if [[ $X == "False" ]]; then
         if [[ $XX == "AIRBASE" ]]; then
             echo -ne "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"

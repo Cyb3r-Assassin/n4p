@@ -23,16 +23,16 @@ BLD_WHT=${txtbld}$(tput setaf 7) # white
 PUR=$(tput setaf 5)              # purple
 TXT_RST=$(tput sgr0)             # Reset
 EYES=$(tput setaf 6)
-AP_GATEWAY=$(grep routers $DIR/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+AP_GATEWAY=$(grep routers /etc/n4p/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
 
-echo "${BLD_TEA}$(cat $DIR/opening.logo)${TXT_RST}"; sleep 1.5
+echo "${BLD_TEA}$(cat /usr/share/opening.logo)${TXT_RST}"; sleep 1.5
 
 sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
 if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
 
 get_name()
 {
-    USE=$(grep $1 $DIR/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 /etc/n4p/n4p.conf | awk -F= '{print $2}')
 }
 
 menu()
@@ -59,7 +59,7 @@ menu()
         get_name "IFACE1="; IFACE1=$USE
     	sudo xterm -bg black -fg blue -T "Recon" -geometry 90x20 -e $DIR/./recon.sh $IFACE1 recon &>/dev/null &
     elif [[ $choice == 2 ]]; then
-    	sudo nano $DIR/n4p.conf
+    	sudo nano /etc/n4p/n4p.conf
     elif [[ $choice == 3 ]]; then
         get_name "IFACE1="; IFACE1=$USE
         sudo xterm -bg black -fg blue -T "Dump cap" -geometry 90x20 -e $DIR/./recon.sh $IFACE1 dump &>/dev/null &
@@ -104,7 +104,7 @@ menu()
 killemAll()
 {
     xhost -
-    echo "${BLD_TEA}$(cat $DIR/zed.logo)${TXT_RST}"
+    echo "${BLD_TEA}$(cat /usr/share/zed.logo)${TXT_RST}"
     exit 0
 }
 
