@@ -30,6 +30,7 @@ get_name "AP="; UAP=$USE
 get_name "BRIDGED="; BRIDGED=$USE
 get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
 get_name "ATTACK="; ATTACK=$USE
+get_name "USE_VPN="; USE_VPN=$USE
 # Text color variables
 TXT_BLD=$(tput bold)             # Bold
 BLD_RED=${txtbld}$(tput setaf 1) # red
@@ -50,26 +51,6 @@ echo "$(cat /usr/share/n4p/firewall.logo)"; sleep 2.5
 ##################################################################
 ######################Build the firewall##########################
 ##################################################################
-fw_pre_services()
-{
-    if [[ -z $FAST ]]; then
-        read -p "Would you like to enable the configured server services such as ssh httpd? (y/n) " RESP
-        if [[ $RESP == [yY] ]]; then
-            fw_services
-        elif [[ $RESP != [nN] ]]; then
-            clear; echo "$WARN Bad input"; fw_pre_services
-        fi
-
-        read -p "Would you like to turn on OpenVPN now? (y/n) " RESP
-        if [[ $RESP == [yY] ]]; then
-            fw_vpn; 
-        elif [[ $RESP != [nN] ]]; then
-            clear; echo "$WARN Bad input"
-            fw_pre_services
-        fi
-    fi
-}
-
 fw_redundant()
 {
     ## Flush rules
@@ -112,11 +93,22 @@ fw_redundant()
     $IPT -A OUTPUT -o $IFACE0 -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
     $IPT -A OUTPUT -o $IFACE0 -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
 
-    fw_pre_services
-}
 
-fw_services()
-{
+    if [[ $USE_VPN == True ]]; then
+        # Allow TUN interface connections to OpenVPN server
+        echo -ne "$INFO Allowing openVPN\n"
+        $IPT -A INPUT -i $VPN -j ACCEPT
+        # Allow TUN interface connections to be forwarded through other interfaces
+        $IPT -A FORWARD -i $VPN -j ACCEPT
+        # Allow TAP interface connections to OpenVPN server
+        $IPT -A INPUT -i $VPNI -j ACCEPT
+        # Allow TAP interface connections to be forwarded through other interfaces
+        $IPT -A FORWARD -i $VPNI -j ACCEPT
+        # I've been called into action
+        echo -ne "$INFO OpenRC now bringing up OpenVPN\n"
+        /etc/init.d/openvpn start
+    fi
+
     ## Allow DNS Server
     echo -ne "$INFO Allowing dns on port 53\n"
     $IPT -A INPUT -t nat -p udp -m udp --dport 53 -j ACCEPT
@@ -130,35 +122,24 @@ fw_services()
     $IPT -A INPUT -t nat -p tcp -m multiport --dports 80,443,8080 -j ACCEPT
 }
 
-vpn_confirmed()
-{
-    #Allow TUN interface connections to OpenVPN server
-    echo -ne "$INFO Allowing openVPN\n"
-    $IPT -A INPUT -i $VPN -j ACCEPT
-    #allow TUN interface connections to be forwarded through other interfaces
-    $IPT -A FORWARD -i $VPN -j ACCEPT
-    # Allow TAP interface connections to OpenVPN server
-    $IPT -A INPUT -i $VPNI -j ACCEPT
-    # Allow TAP interface connections to be forwarded through other interfaces
-    $IPT -A FORWARD -i $VPNI -j ACCEPT
-    # I've been called into action
-    echo -ne "$INFO OpenRC now bringing up OpenVPN\n"
-    /etc/init.d/openvpn start
-}
+fw_up()
+{ 
+    if [[ $BRIDGED == "False" ]]; then
+        if [[ $UAP == "AIRBASE" ]]; then
+            echo -ne "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
+            $IPT -t nat -A POSTROUTING --out-interface $IFACE0 -j MASQUERADE
+            $IPT -A FORWARD -i $AP -o $IFACE0 -j ACCEPT
+        elif [[ $UAP == "HOSTAPD" ]]; then
+            echo -ne "$INFO Allowing wirless for hostapd, routing $AP through $IFACE0 be sure hostapd was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
+            $IPT -A FORWARD -i $IFACE1 -o $IFACE0 -j ACCEPT
+            $IPT -A FORWARD -i $IFACE0 -o $IFACE1 -j ACCEPT
+        else
+            echo "[$WARN] ERROR in AP configuration file, no AP found"
+        fi
+    fi
 
-fw_vpn()
-{
-    echo "$INFO Please pay close attention to the following when considering turning on openvpn."
-    echo "$INFO The gateway is still broken for dual nics while hosting services." # Do some work on custom gateway routing for this soon"
-    echo "$INFO Be careful the VPN configuration could break your gateway for MiTM attacks and remote services."
-    echo "$INFO This will be fixed in the future."
-    echo " You're advised not to use the vpn during attacks and only operate during daily activity at this time"
-    read -p "$INFO Do you still want to turn on OpenVPN now? (y/n) " RESP
-    if [[ $RESP == [yY] ]]; then 
-        vpn_confirmed
-    elif [[ $RESP != [nN] ]]; then
-        echo "$WARN Bad input"
-        fw_vpn
+    if [[ $ATTACK == "SslStrip" ]]; then
+        $IPT -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 10000
     fi
 }
 
@@ -179,42 +160,11 @@ fw_closure()
     echo -ne "$INFO Listing the iptables rules as confirmation\n"
     time=12
     while [[ $time > 0 ]]; do
-	$IPT -L -v
+    $IPT -L -v
         echo "Window closing automatically in $time seconds."
         sleep 1
         time=$(($time-1))
     done
-}
-
-fw_up()
-{ 
-    if [[ $BRIDGED == "False" ]]; then
-        if [[ $UAP == "AIRBASE" ]]; then
-            echo -ne "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
-            $IPT -t nat -A POSTROUTING -o $IFACE0 -j MASQUERADE
-            $IPT -A FORWARD -i $AP -o $IFACE0 -j ACCEPT
-            $IPT -A FORWARD -i $IFACE0 -o $AP -j ACCEPT
-        elif [[ $UAP == "HOSTAPD" ]]; then
-            echo -ne "$INFO Allowing wirless for hostapd, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
-            $IPT -A FORWARD -i $IFACE1 -o $IFACE0 -j ACCEPT
-            $IPT -A FORWARD -i $IFACE0 -o $IFACE1 -j ACCEPT
-        else
-            echo "[$WARN] ERROR in AP configuration file, no AP found"
-        fi
-    fi
-
-    if [[ $ATTACK == "SslStrip" ]]; then
-        $IPT -t nat -A PREROUTING -p tcp --destination-port 443 -j REDIRECT --to-port 8080
-        $IPT -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 8080
-    fi
-    fw_closure
-}
-
-fw_down()
-{ 
-    fw_redundant
-    echo -e "$INFO Defaults loaded for daily use.\n"
-    fw_closure
 }
 
 start()
@@ -223,6 +173,7 @@ start()
     if [[ "$RESP" == [Yy] ]]; then
         fw_redundant
         fw_up
+        fw_closure
     elif [[ "$RESP" == [Nn] ]]; then
         fw_redundant
         echo "[$OK] Defaults loaded for daily use."
