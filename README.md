@@ -51,8 +51,10 @@ allowing users to sniff networks without using a rouge AP. For this option you j
 network device attached to the network and ARP_VICTIM to IP or Gateway you are attacking.
 
 **Known Limitations**
+
 Currently only 1 AP can be created at this time, but multiple monitoring interfaces may be created.
 HOSTAPD has not been released back into n4p yet.
 
 **BUGS**
+
 Report all bugs to Cyb3r-Assassin directly through git contacts or irc.freenode
