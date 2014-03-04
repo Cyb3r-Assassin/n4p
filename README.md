@@ -2,7 +2,7 @@
 <div>Configures network variables automatically for Airbase-ng with bridging and ipv4_forwarding ability. Configures all necessary iptables rules and prepares the system for MITM, ARP, and SSLstriping attacks.</div>
 
 <div style="margins:auto;>
-<img src="http://i.imgur.com/RGdtLR8.png" alt="n4p"/>
+<img src="http://i.imgur.com/RGdtLR8.png" alt="n4p" />
 <br />
 <img src="http://i.imgur.com/gZ0aV5H.png" alt="n4p.conf" />
 <br />
