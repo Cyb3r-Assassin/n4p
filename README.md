@@ -1,5 +1,5 @@
-###N4P for Pentoo and Gentoo Linux.
-#Offensives network security application
+##N4P for Pentoo and Gentoo Linux.
+####Offensives network security application
 
 * Configures network variables automatically for Airbase-ng with bridging and ipv4_forwarding ability.
 * Configures all necessary elements and performs MITM, ARP, WPA Cracking, Sniffing and SSLstrip attacks.
