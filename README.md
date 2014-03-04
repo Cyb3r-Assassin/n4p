@@ -58,3 +58,11 @@ HOSTAPD has not been released back into n4p yet.
 **BUGS**
 
 Report all bugs to Cyb3r-Assassin directly through git contacts or irc.freenode
+
+**Why is n4p only for Pentoo and Gentoo?**
+
+Because I'm a sane pentester
+
+**What if I want to use n4p on a different distribution?**
+
+Fork it.
