@@ -2,9 +2,13 @@
 
 Improved ARPSPOOF by increasing cognition with config file options
 
-Cleaned up the functions for iptables. Didn't need to be so elaborate for newer versions of n4p.
+Cleaned up the functions for iptables. Didn't need to be so elaborate for newer versions of n4p
 
-Extended ettercaps ability by transfering its command options into the config file.
+Extended ettercaps ability by transfering its command options into the config file
+
+Fixed a trivial parsing of ip retrieval leaving trailing space
+
+Lot of code changes for the the future of n4p but mean nothing to you.
 
 0.9
 
@@ -39,7 +43,7 @@ Cleaned up some minor code sections that started to get away from me as became s
 
 Updated some code to comply with airmon-zc changes
 
-Changed install dir's of configs and logos due to Zero-Chaos excessively bitting my head off.
+Changed install dir's of configs and logos due to Zero-Chaos excessively bitting my head off
 
 0.7
 Intergrated SSLstrip 
