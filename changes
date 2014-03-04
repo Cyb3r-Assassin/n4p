@@ -10,6 +10,8 @@ Fixed a trivial parsing of ip retrieval leaving trailing space
 
 Lot of code changes for the the future of n4p but mean nothing to you.
 
+Allowed recon to now check for rfkill lock
+
 0.9
 
 Fixed a bug with monitor device assignment when not using wlan0

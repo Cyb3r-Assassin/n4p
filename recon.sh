@@ -41,6 +41,7 @@ if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snack
 
 get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
 get_name "CHAN="; CHAN=$USE
+[[ -n $(rfkill list | grep yes) ]] && rfkill unblock 0
 
 doit()
 {
