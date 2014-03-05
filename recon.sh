@@ -12,6 +12,7 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
     [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+sessionfolder=/tmp/n4p
 
 get_name()
 {

