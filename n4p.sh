@@ -45,7 +45,7 @@ menu()
                /\#/\         '\\-//\`       |.===. '   
               /(${TXT_RST}${EYES}o o${TXT_RST}${BLD_WHT})\        (${EYES}o o${TXT_RST}${BLD_WHT})        ${TXT_RST}${PUR}{}${TXT_RST}${EYES}o o${TXT_RST}${PUR}{}${TXT_RST}${BLD_WHT}  
     +======ooO--(_)--Ooo-ooO--(_)--Ooo-ooO--(_)--Ooo======+
-    | ${TXT_RST}${BLD_TEA}1${TXT_RST}${BLD_WHT})  Perform wifi radious recon                      |
+    | ${TXT_RST}${BLD_TEA}1${TXT_RST}${BLD_WHT})  Perform wifi radius recon                       |
     | ${TXT_RST}${BLD_TEA}2${TXT_RST}${BLD_WHT})  Set devices for use and attack                  |
     | ${TXT_RST}${BLD_TEA}3${TXT_RST}${BLD_WHT})  Airodump-ng target for .cap capture crack       |
     | ${TXT_RST}${BLD_TEA}4${TXT_RST}${BLD_WHT})  Aircrack-ng the new captured .cap               |
