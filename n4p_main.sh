@@ -165,7 +165,7 @@ startairbase()
         elif [[ $ATTACK == "Karma" ]]; then
             airbase-ng -c $CHAN -x $PPS -I $BEACON -a $BSSID -e $ESSID -P -C 15 -v $MON > $sessionfolder/logs/airbase-ng.log &
         else # This just gives us an AP for Sniffing
-            airbase-ng -c $CHAN -x $PPS -I $BEACON -e -a $BSSID $ESSID -P -v $MON > $sessionfolder/logs/airbase-ng.log &
+            airbase-ng -c $CHAN -x $PPS -I $BEACON -e $ESSID -a $BSSID -P -v $MON > $sessionfolder/logs/airbase-ng.log &
         fi
         sleep 1.5
     fi
