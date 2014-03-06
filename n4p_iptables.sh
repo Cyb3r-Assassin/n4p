@@ -167,17 +167,14 @@ fw_closure()
 
 start()
 {
-    read -p "[$OK] Are we using n4p Access Point? (Y/N) " RESP
-    if [[ "$RESP" == [Yy] ]]; then
+    if [[ -n $(ps -A | grep -i airbase) ]]; then 
         fw_redundant
         fw_up
         fw_closure
-    elif [[ "$RESP" == [Nn] ]]; then
+    else
         fw_redundant
         echo "[$OK] Defaults loaded for daily use."
         fw_closure
-    else
-        clear; echo -e "Invalid response\n"; start
     fi
 }
 start
