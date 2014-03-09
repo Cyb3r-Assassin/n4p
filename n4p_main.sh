@@ -16,13 +16,15 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
     [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+DIR_CONF=/etc/n4p
+DIR_LOGO=/usr/share/n4p
 
 #######################################
 # Building a sane working environment #
 #######################################
 get_name() # Retrieve the config values
 {
-    USE=$(grep $1 /etc/n4p/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
 }
 
 get_state() # Retrieve the state of interfaces
@@ -63,10 +65,10 @@ depends()
     MON="${IFACE1}mon"
     VPN="tun0"
     VPNI="tap+"
-    AP_GATEWAY=$(grep routers /etc/n4p/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
-    AP_SUBNET=$(grep netmask /etc/n4p/dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
-    AP_IP=$(grep netmask /etc/n4p/dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
-    AP_BROADCAST=$(grep broadcast-address /etc/n4p/dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+    AP_GATEWAY=$(grep routers ${DIR_CONF}/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+    AP_SUBNET=$(grep netmask ${DIR_CONF}/dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
+    AP_IP=$(grep netmask ${DIR_CONF}/dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
+    AP_BROADCAST=$(grep broadcast-address ${DIR_CONF}/dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
     # Text color variables
     TXT_UND=$(tput sgr 0 1)          # Underline
     TXT_BLD=$(tput bold)             # Bold
@@ -86,7 +88,7 @@ depends()
 }
 banner()
 { 
-    echo "${BLD_TEA}$(cat /usr/share/n4p/auth.logo)${TXT_RST}"; sleep 3
+    echo "${BLD_TEA}$(cat ${DIR_LOGO}/auth.logo)${TXT_RST}"; sleep 3
 }
 setupenv()
 {
@@ -285,7 +287,7 @@ fbridge()
 
 dhcp()
 {
-    if [[ -n $(grep -i Pentesters_AP /etc/dhcp/dhcpd.conf | awk '{print $2}') ]]; then
+    if [[ -n $(grep -i Pentesters_AP ${DIR_CONF}/dhcpd.conf | awk '{print $2}') ]]; then
         [[ $BRIDGED != 'True' ]] && /etc/init.d/dhcpd restart || /etc/init.d/net.$BRIDGE start
     else # We apparently don't have the proper configuration file. Make the changes
         find * -wholename /etc/n4p/dhcpd.conf -exec cat {} >> /etc/dhcp/dhcpd.conf \;

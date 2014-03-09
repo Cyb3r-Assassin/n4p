@@ -13,10 +13,12 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
     [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+DIR_CONF=/etc/n4p
+DIR_LOGO=/usr/share/n4p
 
 get_name() # Retrieve the config values
 {
-    USE=$(grep $1 /etc/n4p/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
 }
 
 IPT="/sbin/iptables"
@@ -46,7 +48,7 @@ QUES=${BLD_BLU}?${TXT_RST}       # Questions
 PASS="${BLD_TEA}[${TXT_RSR}${BLD_WHT} OK ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
-echo "$(cat /usr/share/n4p/firewall.logo)"; sleep 2.5
+echo "$(cat ${DIR_LOGO}/firewall.logo)"; sleep 2.5
 
 ##################################################################
 ######################Build the firewall##########################

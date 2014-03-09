@@ -13,10 +13,12 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 sessionfolder=/tmp/n4p
+DIR_CONF=/etc/n4p
+DIR_LOGO=/usr/share/n4p
 
 get_name()
 {
-    USE=$(grep $1 /etc/n4p/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
 }
 
 get_state() # Retrieve the state of interfaces
@@ -26,7 +28,6 @@ get_state() # Retrieve the state of interfaces
 
 IFACE1=$1
 JOB=$2
-get_name "IFACE1="; IFACE1=$USE
 MON="${IFACE1}mon"
 # Text color variables
 TXT_BLD=$(tput bold)             # Bold
@@ -36,7 +37,7 @@ BLD_RED=${txtbld}$(tput setaf 1) # red
 TXT_RST=$(tput sgr0)             # Reset
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
-[[ $2 == "recon" ]] && echo "${BLD_TEA}$(cat /usr/share/n4p/recon.logo)${TXT_RST}"; sleep 2.5 || echo "${BLD_TEA}$(cat /usr/share/n4p/dump.logo)${TXT_RST}"; sleep 2.5
+[[ $2 == "recon" ]] && echo "${BLD_TEA}$(cat ${DIR_LOGO}/recon.logo)${TXT_RST}"; sleep 2.5 || echo "${BLD_TEA}$(cat ${DIR_LOGO}/dump.logo)${TXT_RST}"; sleep 2.5
     	
 if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
 
@@ -55,8 +56,15 @@ doit()
     if [[ $JOB == "recon" ]]; then
 	    xterm -hold -bg black -fg blue -T "Recon" -geometry 90x20 -e airodump-ng $MON &>/dev/null &
 	else
-        rm $sessionfolder/${VICTIM_BSSID}*
-	    xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN -w $sessionfolder/$VICTIM_BSSID $MON &>/dev/null &
+        if [[ -f $sessionfolder/${VICTIM_BSSID}* ]]; then
+            read -p "${VICTIM_BSSID}.cap exists already. Continuing will remove the file. Continue anyways? [y/n]" option
+            if [[ $option != [Yy] ]];
+                exit 1
+            else
+                rm $sessionfolder/${VICTIM_BSSID}*
+            fi
+	    fi
+        xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN -w $sessionfolder/$VICTIM_BSSID $MON &>/dev/null &
     fi
 }
 
@@ -69,7 +77,7 @@ keepalive()
 killAll()
 {
 	airmon-zc stop $MON
-	echo "${BLD_TEA}$(cat /usr/share/n4p/die.logo)${TXT_RST}"
+	echo "${BLD_TEA}$(cat ${DIR_LOGO}/die.logo)${TXT_RST}"
     sleep 2
 	exit 0
 }

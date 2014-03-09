@@ -14,10 +14,12 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
     [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+DIR_CONF=/etc/n4p
+DIR_LOGO=/usr/share/n4p
 
 get_name()
 {
-    USE=$(grep $1 /etc/n4p/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
 }
 
 # Text color variables
@@ -28,11 +30,11 @@ BLD_WHT=${txtbld}$(tput setaf 7) # white
 PUR=$(tput setaf 5)              # purple
 TXT_RST=$(tput sgr0)             # Reset
 EYES=$(tput setaf 6)
-AP_GATEWAY=$(grep routers /etc/n4p/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+AP_GATEWAY=$(grep routers ${DIR_CONF}/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
 get_name "IFACE1="; IFACE1=$USE
 MON="${IFACE1}mon"
 
-echo "${BLD_TEA}$(cat /usr/share/n4p/opening.logo)${TXT_RST}"; sleep 1
+echo "${BLD_TEA}$(cat ${DIR_LOGO}/opening.logo)${TXT_RST}"; sleep 1
 
 sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
 [ ! -d "$sessionfolder" ] && mkdir "$sessionfolder"; mkdir -p "$sessionfolder" "$sessionfolder/logs"
@@ -113,7 +115,7 @@ killemAll()
 {
     echo ""
     xhost -
-    echo "${BLD_TEA}$(cat /usr/share/n4p/zed.logo)${TXT_RST}"
+    echo "${BLD_TEA}$(cat ${DIR_LOGO}/zed.logo)${TXT_RST}"
     exit 0
 }
 

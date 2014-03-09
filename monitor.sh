@@ -1,6 +1,7 @@
 #!/bin/bash
 BLD_RED=${txtbld}$(tput setaf 1) # red
 TXT_RST=$(tput sgr0)             # Reset
+mv /var/log/messages /var/log/messages.bak
 echo "" > /var/log/messages
 
 while true; do
@@ -12,3 +13,11 @@ while true; do
 	echo -e "$gotchya \n"
 	sleep 8
 done
+
+killemAll()
+{
+    mv /var/log/messages.bak /var/log/messages
+    exit 0
+}
+
+trap killemAll INT HUP;
