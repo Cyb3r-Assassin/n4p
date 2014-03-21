@@ -1,3 +1,19 @@
+0.9-r3
+
+Stricter code constraints here and there
+
+Updated monitor file for current log structure compatibility and preserved backwards compatibility.
+
+Introduced youtube demonstration videos
+
+0.9-r2
+
+Preserved system log file now
+
+Moved working Directory path strings into variables
+
+Introduced README file
+
 0.9-r1
 
 Improved ARPSPOOF by increasing cognition with config file options

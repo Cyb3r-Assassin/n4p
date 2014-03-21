@@ -1,7 +1,7 @@
 ##N4P for Pentoo and Gentoo Linux.
 ####Offensives network security application
 
-* Configures network variables automatically for Airbase-ng with bridging and ipv4_forwarding ability.
+* Fully manages system states automatically for Airbase-ng with bridging and ipv4_forwarding ability.
 * Configures all necessary elements and performs MITM, ARP, WPA Cracking, Sniffing and SSLstrip attacks.
 
 Opening screenshot of n4p
@@ -15,7 +15,7 @@ The user may modify options before launching new attacks without interrupting cu
 
 Flexibility of ettercaps options have been preserved by allowing the user to change the options passed during execution.
 
-> Ettercap default switches are -Tq the user could simply change that value to -Tqz if they wanted to disable initial arp.
+> Ettercap default switches are -Tqz the user could simply change that value to -Tq if they wanted to enable initial arp.
 
 ![n4p.conf](http://i.imgur.com/gZ0aV5H.png)
 
@@ -30,21 +30,21 @@ Other monitor options are available by changing the MONITOR_MODE= option in n4p.
 
 ![AP](http://i.imgur.com/ORe3sma.png)
 
-Option 1 shot performing a recon scan. This changes into a Handshake WPA2 Attack by setting the values in n4p.conf and running option 3
+Option 1 screen shot performing a recon scan. This changes into a Handshake WPA2 Attack by setting the values in n4p.conf then running option 3
 
 ![recon](http://i.imgur.com/jwHZMOK.png)
 
-After launching option 5 we view a snapshop of ettercap sniffing passwords off our rouge AP
+After launching option 5 we view a snapshop of ettercap sniffing passwords from our rouge AP
 
 ![ettercap](http://i.imgur.com/AAqPNwE.png)
 
 n4p stores all of our logs and reconnaissance data inside a tmp folder /tmp/n4p/
-This folder is used by n4p internal attack communications. Such as capturing .cap files and cracking them with option 4
-n4p will not destroy this folder so that the user may go back and store the files elsewhere for later analysis or for incorporating into pentesting reports.
-
+This folder is used by n4p internal attack communications. Such as capturing .cap files and for cracking them later with option 4
+n4p will not destroy this folder on exit so that the user may go back and store the files elsewhere for later analysis. Or for incorporating into pentesting reports.
+If you incur troubles launching applications via n4p, view the n4p log files!
 ![temp](http://i.imgur.com/t4JZKRP.png)
 
-> The option to build the firewall must be ran last and each time you change attacks.
+> The option for building the firewall must be ran last and each time you change attacks.
 
 Some further options are available such as launching sslstrip against our victims by selecting option 8. And arpspoof has also been provided
 allowing users to sniff networks without using a rouge AP. For this option you just set IFACE1= in the n4p.conf to the 
@@ -52,7 +52,6 @@ network device attached to the network and ARP_VICTIM to IP or Gateway you are a
 
 **Known Limitations**
 
-Currently only 1 AP can be created at this time, but multiple monitoring interfaces may be created.
 HOSTAPD has not been released back into n4p yet.
 
 **BUGS**
@@ -65,4 +64,4 @@ Because I'm a sane pentester
 
 **What if I want to use n4p on a different distribution?**
 
-Fork it.
+Than write a patch
