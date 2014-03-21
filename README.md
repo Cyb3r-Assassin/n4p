@@ -54,15 +54,15 @@ network device attached to the network and ARP_VICTIM to IP or Gateway you are a
 
 > Cracking WPA2
 
-(https://www.youtube.com/watch?v=y0V74wtSnz0)
+https://www.youtube.com/watch?v=y0V74wtSnz0
 
 >Sniffing SSL Passwords
 
-(https://www.youtube.com/watch?v=i5HptOlbsD0)
+https://www.youtube.com/watch?v=i5HptOlbsD0
 
 >Sniffing network
 
-(https://www.youtube.com/watch?v=1Vt6D_XGJTQ)
+https://www.youtube.com/watch?v=1Vt6D_XGJTQ
 
 **Known Limitations**
 
