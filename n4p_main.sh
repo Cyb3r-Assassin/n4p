@@ -13,7 +13,7 @@ SOURCE="${BASH_SOURCE[0]}"
 while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
     SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
+    [[ $SOURCE != /* ]] && SOURCE="${DIR}/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 DIR_CONF=/etc/n4p
@@ -96,7 +96,7 @@ setupenv()
     if [[ -n $(ps -A | grep -i airbase) ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; killall airbase-ng; fi
     
     sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
-    [[ ! -d "$sessionfolder" ]] && mkdir "$sessionfolder"; mkdir -p "$sessionfolder" "$sessionfolder/logs"
+    [[ ! -d "$sessionfolder" ]] && mkdir "$sessionfolder"; mkdir -p "$sessionfolder" "${sessionfolder}/logs"
     [[ -n $(rfkill list | grep yes) ]] && rfkill unblock 0
 }
 
@@ -163,19 +163,19 @@ startairbase()
     if [[ $MENUCHOICE == 1 ]]; then
         echo -n "$INFO STARTING SERVICE: AIRBASE-NG"
         if [[ $ATTACK == "Handshake" ]]; then
-            airbase-ng -$TYPE $ENCRYPTION -c $CHAN -a $VICTIM_BSSID -e $ESSID -v $MON > $sessionfolder/logs/airbase-ng.log &
+            airbase-ng -$TYPE $ENCRYPTION -c $CHAN -a $VICTIM_BSSID -e $ESSID -v $MON > ${sessionfolder}/logs/airbase-ng.log &
         elif [[ $ATTACK == "Karma" ]]; then
-            airbase-ng -c $CHAN -x $PPS -I $BEACON -a $BSSID -e $ESSID -P -C 15 -v $MON > $sessionfolder/logs/airbase-ng.log &
+            airbase-ng -c $CHAN -x $PPS -I $BEACON -a $BSSID -e $ESSID -P -C 15 -v $MON > ${sessionfolder}/logs/airbase-ng.log &
         else # This just gives us an AP for Sniffing
-            airbase-ng -c $CHAN -x $PPS -I $BEACON -e $ESSID -a $BSSID -P -v $MON > $sessionfolder/logs/airbase-ng.log &
+            airbase-ng -c $CHAN -x $PPS -I $BEACON -a $BSSID -e $ESSID -P -v $MON > ${sessionfolder}/logs/airbase-ng.log &
         fi
-        sleep 1.5
+        sleep 2
     fi
 
     echo -ne "\n$INFO Assigning IP and Route to $AP\n"
     get_state "$AP"
     while [[ $STATE == 'DOWN' || -z $(ip addr list | grep $AP) ]]; do #check AP state if down go up, if AP has not loaded yet wait a bit
-        sleep 0.3
+        sleep 0.5
         ip link set $AP up
         get_state "$AP"
     done
@@ -209,7 +209,7 @@ monitor()
 {
     if [[ -n $MONITOR_MODE ]]; then
         if [[ $MONITOR_MODE == "Custom" ]]; then
-            xterm -hold -geometry 60x35 -bg black -fg blue -T "N4P Victims" -e $DIR/./monitor.sh $1 &>/dev/null &
+            xterm -hold -geometry 60x35 -bg black -fg blue -T "N4P Victims" -e ${DIR}/./monitor.sh $1 &>/dev/null &
         elif [[ $MONITOR_MODE == "dhcpdump" ]]; then
             xterm -hold -bg black -fg blue -T "N4P Victims" -geometry 65x15 -e dhcpdump -i $1 &>/dev/null &
         elif [[ $MONITOR_MODE == "arp" ]]; then

@@ -11,7 +11,7 @@ SOURCE="${BASH_SOURCE[0]}"
 while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
     SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
+    [[ $SOURCE != /* ]] && SOURCE="${DIR}/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 DIR_CONF=/etc/n4p
@@ -37,7 +37,7 @@ MON="${IFACE1}mon"
 echo "${BLD_TEA}$(cat ${DIR_LOGO}/opening.logo)${TXT_RST}"; sleep 1
 
 sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
-[ ! -d "$sessionfolder" ] && mkdir "$sessionfolder"; mkdir -p "$sessionfolder" "$sessionfolder/logs"
+[ ! -d "$sessionfolder" ] && mkdir "$sessionfolder"; mkdir -p "$sessionfolder" "${sessionfolder}/logs"
 
 menu()
 {
@@ -64,20 +64,20 @@ menu()
         killemAll
     elif [[ $choice == 1 ]]; then
         get_name "IFACE1="; IFACE1=$USE
-    	sudo xterm -bg black -fg blue -T "Recon" -geometry 90x20 -e $DIR/./recon.sh $IFACE1 recon &>/dev/null &
+    	sudo xterm -bg black -fg blue -T "Recon" -geometry 90x20 -e ${DIR}/./recon.sh $IFACE1 recon &>/dev/null &
     elif [[ $choice == 2 ]]; then
     	sudo nano /etc/n4p/n4p.conf
     elif [[ $choice == 3 ]]; then
         get_name "IFACE1="; IFACE1=$USE
-        sudo xterm -bg black -fg blue -T "Dump cap" -geometry 90x20 -e $DIR/./recon.sh $IFACE1 dump &>/dev/null &
+        sudo xterm -bg black -fg blue -T "Dump cap" -geometry 90x20 -e ${DIR}/./recon.sh $IFACE1 dump &>/dev/null &
     elif [[ $choice == 4 ]]; then
         get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
         get_name "WORD_LIST="; WORD_LIST=$USE
-        sudo xterm -hold -bg black -fg blue -T "Cracking" -geometry 90x20 -e aircrack-ng $sessionfolder/${VICTIM_BSSID}-01.cap -w $WORD_LIST &>/dev/null &
+        sudo xterm -hold -bg black -fg blue -T "Cracking" -geometry 90x20 -e aircrack-ng ${sessionfolder}/${VICTIM_BSSID}-01.cap -w $WORD_LIST &>/dev/null &
     elif [[ $choice == 5 ]]; then
-    	sudo xterm -bg black -fg blue -T "Airbase" -geometry 90x20 -e $DIR/./n4p_main.sh &>/dev/null &
+    	sudo xterm -bg black -fg blue -T "Airbase" -geometry 90x20 -e ${DIR}/./n4p_main.sh &>/dev/null &
     elif [[ $choice == 6 ]]; then
-    	sudo xterm -bg black -fg blue -T "iptables" -geometry 90x20 -e $DIR/./n4p_iptables.sh &>/dev/null &
+    	sudo xterm -bg black -fg blue -T "iptables" -geometry 90x20 -e ${DIR}/./n4p_iptables.sh &>/dev/null &
     elif [[ $choice == 7 ]]; then
         get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
         get_name "STATION="; STATION=$USE
@@ -85,20 +85,20 @@ menu()
         MON="${IFACE1}mon"
         sudo xterm -bg black -fg blue -T "Aireplay" -geometry 90x20 -e aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION ${IFACE1}mon &>/dev/null &
     elif [[ $choice == 8 ]]; then
-        echo -e "SSL Strip Log File\n" > $sessionfolder/ssl.log
-        sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w $sessionfolder/ssl.log &>/dev/null &
+        echo -e "SSL Strip Log File\n" > ${sessionfolder}/ssl.log
+        sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w ${sessionfolder}/ssl.log &>/dev/null &
     elif [[ $choice == 9 ]]; then
         get_name "BRIDGE_NAME="; BR_NAME=$USE
         get_name "AP="; AP_NAME=$USE
         get_name "BRIDGED="; BRIDGED=$USE
-        [[ ! -f $sessionfolder/recovered_passwords.pcap ]] && sudo touch $sessionfolder/recovered_passwords.pcap
+        [[ ! -f ${sessionfolder}/recovered_passwords.pcap ]] && sudo touch ${sessionfolder}/recovered_passwords.pcap
         get_name "ETTERCAP_OPTIONS="; ETTERCAP_OPTIONS=$USE
         if [[ $BRIDGED == "True" ]]; then
-    	   sudo xterm -T "ettercap $BR_NAME" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $BR_NAME -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
+    	   sudo xterm -T "ettercap $BR_NAME" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $BR_NAME -w ${sessionfolder}/recovered_passwords.pcap &>/dev/null &
         elif [[ $AP_NAME == "AIRBASE" ]]; then
-           sudo xterm -T "ettercap at0" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i at0 -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
+           sudo xterm -T "ettercap at0" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i at0 -w ${sessionfolder}/recovered_passwords.pcap &>/dev/null &
         elif [[ $AP_NAME == "HOSTAPD" ]]; then
-           sudo xterm -T "ettercap $IFACE1" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w $sessionfolder/recovered_passwords.pcap &>/dev/null &
+           sudo xterm -T "ettercap $IFACE1" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w ${sessionfolder}/recovered_passwords.pcap &>/dev/null &
         fi
     elif [[ $choice == 10 ]]; then
         get_name "IFACE1="; IFACE1=$USE

@@ -1,4 +1,4 @@
-#!/bin/bash
+[#!/bin/bash
 if [[ $(id -u) != 0 ]]; then # Verify we are root if not exit
    echo "Please Run This Script As Root or With Sudo!" 1>&2
    exit 1
@@ -9,7 +9,7 @@ SOURCE="${BASH_SOURCE[0]}"
 while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
     SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
+    [[ $SOURCE != /* ]] && SOURCE="${DIR}/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 sessionfolder=/tmp/n4p
@@ -56,15 +56,15 @@ doit()
     if [[ $JOB == "recon" ]]; then
 	    xterm -hold -bg black -fg blue -T "Recon" -geometry 90x20 -e airodump-ng $MON &>/dev/null &
 	else
-        if [[ -f $sessionfolder/${VICTIM_BSSID}* ]]; then
+        if [[ -f ${sessionfolder}/${VICTIM_BSSID}* ]]; then
             read -p "${VICTIM_BSSID}.cap exists already. Continuing will remove the file. Continue anyways? [y/n]" option
             if [[ $option != [Yy] ]];
                 exit 1
             else
-                rm $sessionfolder/${VICTIM_BSSID}*
+                rm ${sessionfolder}/${VICTIM_BSSID}*
             fi
 	    fi
-        xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN -w $sessionfolder/$VICTIM_BSSID $MON &>/dev/null &
+        xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN -w ${sessionfolder}/$VICTIM_BSSID $MON &>/dev/null &
     fi
 }
 
