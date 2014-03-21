@@ -50,6 +50,20 @@ Some further options are available such as launching sslstrip against our victim
 allowing users to sniff networks without using a rouge AP. For this option you just set IFACE1= in the n4p.conf to the 
 network device attached to the network and ARP_VICTIM to IP or Gateway you are attacking.
 
+**Youtube Demonstations**
+
+> Cracking WPA2
+
+(https://www.youtube.com/watch?v=y0V74wtSnz0)
+
+>Sniffing SSL Passwords
+
+(https://www.youtube.com/watch?v=i5HptOlbsD0)
+
+>Sniffing network
+
+(https://www.youtube.com/watch?v=1Vt6D_XGJTQ)
+
 **Known Limitations**
 
 HOSTAPD has not been released back into n4p yet.
