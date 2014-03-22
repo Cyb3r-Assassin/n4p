@@ -3,13 +3,13 @@ BLD_RED=${txtbld}$(tput setaf 1) # red
 TXT_RST=$(tput sgr0)             # Reset
 
 DIR_LOGO=/usr/share/n4p
-LOG_NEW=/var/log/everything/current
-LOG_COMPATABILITY=/var/log/messages
+LOG_METALOG=/var/log/everything/current
+LOG_SYSLOG_NG=/var/log/messages
 
-if [[ -f $LOG_NEW ]]; then
-    USE=$LOG_NEW
-elif [[ -f $LOG_COMPATABILITY ]]; then
-    USE=$LOG_COMPATABILITY
+if [[ -f $LOG_METALOG ]]; then
+    USE=$LOG_METALOG
+elif [[ -f $LOG_SYSLOG_NG ]]; then
+    USE=$LOG_SYSLOG_NG
 else
     echo "We were unable to locate any system log files\nPlease fix or use a different mode"
 fi

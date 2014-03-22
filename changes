@@ -2,7 +2,7 @@
 
 Stricter code constraints here and there
 
-Updated monitor file for current log structure compatibility and preserved backwards compatibility.
+Updated monitor.sh file compatibility with Metalog and Syslog-ng since Pentoo is using Metalog.
 
 Introduced youtube demonstration videos
 
