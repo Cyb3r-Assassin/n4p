@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ $(whoami) != 'root'  ]]; then 
-    echo "[$CRIT] Please Run This Script As Root or With Sudo!"
+    echo "[$CRIT] Please Run This Script from n4p!"
     exit 0
 fi
 
@@ -56,127 +56,202 @@ echo "$(cat ${DIR_LOGO}/firewall.logo)"; sleep 2.5
 fw_redundant()
 {
     ## Flush rules
-    echo -ne "$INFO Flushing old rules\n"
+    einfo "$INFO Flushing old rules\n"
     /etc/init.d/iptables stop
     $IPT -F
     $IPT -t nat -F
-    $IPT --delete-chain
-    $IPT -t nat --delete-chain
+    $IPT -X
+    $IPT -t nat -X
+    $IPT -t mangle -X
     $IPT -F FORWARD
     $IPT -t filter --flush FORWARD
     $IPT -t filter --flush INPUT
 
     # Set default policies for all three default chains
-    echo -ne "$INFO Setting default policies\n"
+    einfo "$INFO Setting default policies\n"
+    $IPT -P INPUT DROP
     $IPT -P OUTPUT ACCEPT
-
-    echo -ne "$INFO We will allow ip forwarding\n"
     echo 1 > /proc/sys/net/ipv4/ip_forward
     $IPT -P FORWARD ACCEPT
-
-    # Enable free use of loopback interfaces
-    echo -ne "$INFO  Allowing loopback devices\n"
-    $IPT -A INPUT -i lo -j ACCEPT
-    $IPT -A OUTPUT -o lo -j ACCEPT
-
-    ## permit local network
-    echo -ne "$INFO  Permit local network\n"
-    $IPT -A INPUT -i $IFACE0 -j ACCEPT
-    $IPT -A OUTPUT -o $IFACE0 -j ACCEPT
-
-    ## DHCP
-    echo -ne "$INFO  Allowing DHCP server\n"
-    $IPT -A INPUT -t nat -p udp --sport 67 --dport 68 -j ACCEPT
-
-    ## Allow Samba
-    echo -ne "$INFO Configuring Samba\n"
-    $IPT -A INPUT -i $IFACE0 -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-    $IPT -A INPUT -i $IFACE0 -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-    $IPT -A OUTPUT -o $IFACE0 -p tcp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-    $IPT -A OUTPUT -o $IFACE0 -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-
-
+    $IPT -N allowed-connection
+    $IPT -F allowed-connection
+    $IPT -A allowed-connection -i lo -j ACCEPT
+    $IPT -A allowed-connection -o lo -j ACCEPT
     if [[ $USE_VPN == True ]]; then
-        # Allow TUN interface connections to OpenVPN server
-        echo -ne "$INFO Allowing openVPN\n"
-        $IPT -A INPUT -i $VPN -j ACCEPT
-        # Allow TUN interface connections to be forwarded through other interfaces
-        $IPT -A FORWARD -i $VPN -j ACCEPT
-        # Allow TAP interface connections to OpenVPN server
-        $IPT -A INPUT -i $VPNI -j ACCEPT
-        # Allow TAP interface connections to be forwarded through other interfaces
-        $IPT -A FORWARD -i $VPNI -j ACCEPT
-        # I've been called into action
-        echo -ne "$INFO OpenRC now bringing up OpenVPN\n"
+        $IPT -A allowed-connection -i $VPN -j ACCEPT
+        $IPT -A allowed-connection -i $VPNI -j ACCEPT
+        $IPT -A allowed-connection -o $VPN -j ACCEPT
+        $IPT -A allowed-connection -o $VPNI -j ACCEPT
         /etc/init.d/openvpn start
     fi
+    $IPT -A allowed-connection -i $IFACE0 -m state --state NEW -j DROP
+    $IPT -A allowed-connection -i $IFACE0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    $IPT -A allowed-connection -i $IFACE0 -m limit -j LOG --log-prefix "Bad packet from ${IFACE0}:"
+    $IPT -A allowed-connection -j DROP
+    
+    #ICMP traffic
+    einfo "Creating icmp chain"
+    $IPT -N icmp_allowed
+    $IPT -F icmp_allowed
+    $IPT -A icmp_allowed -m state --state NEW -p icmp --icmp-type time-exceeded -j ACCEPT
+    $IPT -A icmp_allowed -m state --state NEW -p icmp --icmp-type destination-unreachable -j ACCEPT
+    $IPT -A icmp_allowed -p icmp -j LOG --log-prefix "Bad ICMP traffic:"
+    $IPT -A icmp_allowed -p icmp -j DROP
+  
+    #Incoming traffic
+    einfo "Creating incoming ssh traffic chain"
+    $IPT -N allow-ssh-traffic-in
+    $IPT -F allow-ssh-traffic-in
+    #Flood protection
+    $IPT -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL RST --dport 22 -j ACCEPT
+    $IPT -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL FIN --dport 22 -j ACCEPT
+    $IPT -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL SYN --dport 22 -j ACCEPT
+    $IPT -A allow-ssh-traffic-in -m state --state RELATED,ESTABLISHED -p tcp --dport 22 -j ACCEPT
+    #outgoing traffic
+    einfo "Creating outgoing ssh traffic chain"
+    $IPT -N allow-ssh-traffic-out
+    $IPT -F allow-ssh-traffic-out
+    $IPT -A allow-ssh-traffic-out -p tcp --dport 22 -j ACCEPT
+  
+    einfo "Creating outgoing dns traffic chain"
+    $IPT -N allow-dns-traffic-out
+    $IPT -F allow-dns-traffic-out
+    $IPT -A allow-dns-traffic-out -p udp -m udp --dport 53 -m conntrack --ctstate --state NEW -j ACCEPT
+    
+    einfo "Creating incoming http/https traffic chain"
+    $IPT -N allow-www-traffic-in
+    $IPT -F allow-www-traffic-in
+    #Flood protection
+    $IPT -A allow-www-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL RST -m multiport --dports 80,443 -j ACCEPT
+    $IPT -A allow-www-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL FIN -m multiport --dports 80,443 -j ACCEPT
+    $IPT -A allow-www-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL SYN -m multiport --dports 80,443 -j ACCEPT
+    $IPT -A allow-www-traffic-in -m state --state RELATED,ESTABLISHED -p tcp -m multiport --dports 80,443 -j ACCEPT
 
-    ## Allow DNS Server
-    echo -ne "$INFO Allowing dns on port 53\n"
-    $IPT -A INPUT -t nat -p udp -m udp --dport 53 -j ACCEPT
+    einfo "Creating outgoing http/https traffic chain"
+    $IPT -N allow-www-traffic-out
+    $IPT -F allow-www-traffic-out
+    $IPT -A allow-www-traffic-out -p tcp -m multiport --dports 80,443 -j ACCEPT
+       
+    einfo "Creating incoming DHCP server"
+    $IPT -N allow-dhcp-traffic-in
+    $IPT -F allow-dhcp-traffic-in
+    #Flood protection
+    $IPT -A allow-dhcp-traffic-in -m limit --limit 1/second -p udp --tcp-flags ALL RST --sport 67 --dport 68 -j ACCEPT
+    $IPT -A allow-dhcp-traffic-in -m limit --limit 1/second -p udp --tcp-flags ALL FIN --sport 67 --dport 68 -j ACCEPT
+    $IPT -A allow-dhcp-traffic-in -m limit --limit 1/second -p udp --tcp-flags ALL SYN --sport 67 --dport 68 -j ACCEPT
+    $IPT -A allow-dhcp-traffic-in -m state --state RELATED,ESTABLISHED -p udp --sport 67 --dport 68 -j ACCEPT
 
-    ## SSH (allows SSH through firewall, from anywhere on the WAN)
-    echo -ne "$INFO Allowing ssh on port 22\n"
-    $IPT -A INPUT -t nat -p tcp --dport 22 -j ACCEPT
-
-    ## Web server
-    echo -ne "$INFO Allowing http on port 80 and https on 443\n"
-    $IPT -A INPUT -t nat -p tcp -m multiport --dports 80,443,8080 -j ACCEPT
-}
-
-fw_up()
-{ 
+    einfo "Creating outgoing DHCP server"
+    $IPT -N allow-dhcp-traffic-out
+    $IPT -F allow-dhcp-traffic-out
+    $IPT -A allow-dhcp-traffic-out -p udp --sport 67 --dport 68 -j ACCEPT
+    
+    einfo "Creating incoming Torrent rules"
+    $IPT -N allow-torrent-traffic-in
+    $IPT -F allow-torrent-traffic-in
+    #Flood protection
+    $IPT -A INPUT -p udp -m multiport --dports 6881,8881 -m conntrack --ctstate --state NEW -j ACCEPT 
+    $IPT -A INPUT -p tcp -m --port 6881:6999 -j ACCEPT 
+    
+    einfo "Creating outgoing Torrent traffic chain"
+    $IPT -N allow-torrent-traffic-out
+    $IPT -F allow-torrent-traffic-out
+    $IPT -A allow-torrent-traffic-out -p udp -m multiport --dports 6881,8881 -j ACCEPT
+    $IPT -A allow-torrent-traffic-out -p tcp -m --port 6881:6999 -j ACCEPT
+    
+    einfo "Creating incoming SAMBA rules"
+    $IPT -N allow-samba-traffic-in
+    $IPT -F allow-samba-traffic-in
+    $IPT -A INPUT -i $IFACE0 -p tcp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate --state NEW -j ACCEPT
+    $IPT -A INPUT -i $IFACE0 -p udp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate --state NEW -j ACCEPT
+    
+    einfo "Creating outgoing SAMBAt traffic chain"
+    $IPT -N allow-samba-traffic-out
+    $IPT -F allow-samba-traffic-out
+    $IPT -A allow-samba-traffic-out -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
+    $IPT -A allow-samba-traffic-out -p tcp -m --dports 445,135,136,137,138,139 -j ACCEPT
+    
     if [[ $BRIDGED == "False" ]]; then
         if [[ $UAP == "AIRBASE" ]]; then
-            echo -ne "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
-            $IPT -t nat -A POSTROUTING --out-interface $IFACE0 -j MASQUERADE
-            $IPT -A FORWARD -i $AP -o $IFACE0 -j ACCEPT
+            einfo "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
+            $IPT -N allow-ap-traffic
+            $IPT -F allow-ap-traffic
+            $IPT -A allow-ap-traffic -t nat -A POSTROUTING --out-interface $IFACE0 -j MASQUERADE
+            eend $?
+            #Be generous with the AP
+            $IPT -A allow-ap-traffic -i $AP -m state --state NEW -j DROP
+            $IPT -A allow-ap-traffic -i $AP -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+            $IPT -A allow-ap-traffic -i $AP -m limit -j LOG --log-prefix "Bad packet from ${AP}:"
+            $IPT -A allow-ap-traffic -j DROP
+            #Be strict with what we allow the AP to do
+            #$IPT -I allow-ap-traffic -i $AP -j DROP 
+            #$IPT -A allow-ap-traffic -p tcp -i $AP -m multiport --dports 80,443,53,68,67 -j ACCEPT
+            #$IPT -A allow-ap-traffic -p udp -i $AP -m multiport --dports 80,443,53,68,67 -j ACCEPT
+            #$IPT -A allow-ap-traffic -i $AP -o $IFACE0 -j ACCEPT
         elif [[ $UAP == "HOSTAPD" ]]; then
             echo -ne "$INFO Allowing wirless for hostapd, routing $AP through $IFACE0 be sure hostapd was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
-            $IPT -A FORWARD -i $IFACE1 -o $IFACE0 -j ACCEPT
-            $IPT -A FORWARD -i $IFACE0 -o $IFACE1 -j ACCEPT
+            $IPT -A allow-ap-traffic -i $IFACE1 -o $IFACE0 -j ACCEPT
+            $IPT -A allow-ap-traffic -i $IFACE0 -o $IFACE1 -j ACCEPT
         else
             echo "[$WARN] ERROR in AP configuration file, no AP found"
         fi
     fi
 
-    [[ $ATTACK == "SslStrip" ]] && $IPT -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-}
-
-fw_closure()
-{
-    ## drop everything else arriving from WAN on local interfaces
-    echo -ne "$INFO Drop everything else\n"
-    $IPT -A INPUT -i $IFACE0 -j LOG
-    $IPT -A INPUT -i $IFACE0 -j DROP
-    #
-    # Save settings
-    #
-    echo -ne "$INFO Saving settings and bringing iptables back online\n"
-    /etc/init.d/iptables save
-    echo ""
-    /etc/init.d/iptables start
+    [[ $ATTACK == "SslStrip" ]] && $IPT -N allow-sslstrip-traffic; $IPT -F allow-sslstrip-traffic; $IPT -t nat -A allow-sslstrip-traffic -p tcp --destination-port 80 -j REDIRECT --to-port 10000
     
-    echo -ne "$INFO Listing the iptables rules as confirmation\n"
-    time=12
-    while [[ $time > 0 ]]; do
-        $IPT -L -v
-        echo "Window closing automatically in $time seconds."
-        sleep 1
-        time=$(($time-1))
-    done
-}
+    #Catch portscanners
+    einfo "Creating portscan detection chain"
+    $IPT -N check-flags
+    $IPT -F check-flags
+    $IPT -A check-flags -p tcp --tcp-flags ALL FIN,URG,PSH -m limit --limit 5/minute -j LOG --log-level alert --log-prefix "NMAP-XMAS:"
+    $IPT -A check-flags -p tcp --tcp-flags ALL FIN,URG,PSH -j DROP
+    $IPT -A check-flags -p tcp --tcp-flags ALL ALL -m limit --limit 5/minute -j LOG --log-level 1 --log-prefix "XMAS:"
+    $IPT -A check-flags -p tcp --tcp-flags ALL ALL -j DROP
+    $IPT -A check-flags -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -m limit --limit 5/minute -j LOG --log-level 1 --log-prefix "XMAS-PSH:"
+    $IPT -A check-flags -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
+    $IPT -A check-flags -p tcp --tcp-flags ALL NONE -m limit --limit 5/minute -j LOG --log-level 1 --log-prefix "NULL_SCAN:"
+    $IPT -A check-flags -p tcp --tcp-flags ALL NONE -j DROP
+    $IPT -A check-flags -p tcp --tcp-flags SYN,RST SYN,RST -m limit --limit 5/minute -j LOG --log-level 5 --log-prefix "SYN/RST:"
+    $IPT -A check-flags -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+    $IPT -A check-flags -p tcp --tcp-flags SYN,FIN SYN,FIN -m limit --limit 5/minute -j LOG --log-level 5 --log-prefix "SYN/FIN:"
+    $IPT -A check-flags -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
 
-start()
-{
-    if [[ -n $(ps -A | grep -i airbase) ]]; then 
-        fw_redundant
-        fw_up
-        fw_closure
-    else
-        fw_redundant
-        echo "[$OK] Defaults loaded for daily use."
-        fw_closure
-    fi
-}
-start
+    # Apply and add invalid states to the chains
+    einfo "Applying chains to INPUT"
+    $IPT -A INPUT -m state --state INVALID -j DROP
+    $IPT -A INPUT -p icmp -j icmp_allowed
+    $IPT -A INPUT -j check-flags
+    $IPT -A INPUT -i lo -j ACCEPT
+    $IPT -A INPUT -j allow-ssh-traffic-in
+    $IPT -A INPUT -j allowed-connection
+  
+    # Apply and add invalid states to the chains
+    einfo "Applying chains to INPUT"
+    $IPTABLES -A INPUT -m state --state INVALID -j DROP
+    $IPTABLES -A INPUT -p icmp -j icmp_allowed
+    $IPTABLES -A INPUT -j check-flags
+    $IPTABLES -A INPUT -i lo -j ACCEPT
+    $IPTABLES -A INPUT -j allow-ssh-traffic-in
+    $IPTABLES -A INPUT -j allowed-connection
+
+    einfo "Applying chains to FORWARD"
+    $IPTABLES -A FORWARD -m state --state INVALID -j DROP
+    $IPTABLES -A FORWARD -p icmp -j icmp_allowed
+    $IPTABLES -A FORWARD -j check-flags
+    $IPTABLES -A FORWARD -o lo -j ACCEPT
+    $IPTABLES -A FORWARD -j allow-ssh-traffic-in
+    $IPTABLES -A FORWARD -j allow-www-traffic-out
+    $IPTABLES -A FORWARD -j allowed-connection
+
+    einfo "Applying chains to OUTPUT"
+    $IPTABLES -A OUTPUT -m state --state INVALID -j DROP
+    $IPTABLES -A OUTPUT -p icmp -j icmp_allowed
+    $IPTABLES -A OUTPUT -j check-flags
+    $IPTABLES -A OUTPUT -o lo -j ACCEPT
+    $IPTABLES -A OUTPUT -j allow-ssh-traffic-out
+    $IPTABLES -A OUTPUT -j allow-dns-traffic-out
+    $IPTABLES -A OUTPUT -j allow-www-traffic-out
+    $IPTABLES -A OUTPUT -j allowed-connection
+      
+    /etc/init.d/iptables save
+    /etc/init.d/iptables start
