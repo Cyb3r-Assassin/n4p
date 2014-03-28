@@ -35,17 +35,9 @@ get_name "ATTACK="; ATTACK=$USE
 get_name "USE_VPN="; USE_VPN=$USE
 # Text color variables
 TXT_BLD=$(tput bold)             # Bold
-BLD_RED=${txtbld}$(tput setaf 1) # red
-BLD_YEL=${txtbld}$(tput setaf 2) # Yellow
-BLD_ORA=${txtbld}$(tput setaf 3) # orange
-BLD_BLU=${txtbld}$(tput setaf 4) # blue
 BLD_PUR=${txtbld}$(tput setaf 5) # purple
 BLD_TEA=${txtbld}$(tput setaf 6) # teal
-BLD_WHT=${txtbld}$(tput setaf 7) # white
 TXT_RST=$(tput sgr0)             # Reset
-INFO=${BLD_WHT}*${TXT_RST}       # Feedback
-QUES=${BLD_BLU}?${TXT_RST}       # Questions
-PASS="${BLD_TEA}[${TXT_RSR}${BLD_WHT} OK ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
 echo "$(cat ${DIR_LOGO}/firewall.logo)"; sleep 2.5
@@ -53,10 +45,10 @@ echo "$(cat ${DIR_LOGO}/firewall.logo)"; sleep 2.5
 ##################################################################
 ######################Build the firewall##########################
 ##################################################################
-fw_redundant()
+fw_start()
 {
     ## Flush rules
-    einfo "$INFO Flushing old rules\n"
+    einfo "Flushing old rules\n"
     /etc/init.d/iptables stop
     $IPT -F
     $IPT -t nat -F
@@ -68,7 +60,7 @@ fw_redundant()
     $IPT -t filter --flush INPUT
 
     # Set default policies for all three default chains
-    einfo "$INFO Setting default policies\n"
+    einfo "Setting default policies\n"
     $IPT -P INPUT DROP
     $IPT -P OUTPUT ACCEPT
     echo 1 > /proc/sys/net/ipv4/ip_forward
@@ -88,7 +80,7 @@ fw_redundant()
     $IPT -A allowed-connection -i $IFACE0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     $IPT -A allowed-connection -i $IFACE0 -m limit -j LOG --log-prefix "Bad packet from ${IFACE0}:"
     $IPT -A allowed-connection -j DROP
-    
+
     #ICMP traffic
     einfo "Creating icmp chain"
     $IPT -N icmp_allowed
@@ -97,7 +89,7 @@ fw_redundant()
     $IPT -A icmp_allowed -m state --state NEW -p icmp --icmp-type destination-unreachable -j ACCEPT
     $IPT -A icmp_allowed -p icmp -j LOG --log-prefix "Bad ICMP traffic:"
     $IPT -A icmp_allowed -p icmp -j DROP
-  
+
     #Incoming traffic
     einfo "Creating incoming ssh traffic chain"
     $IPT -N allow-ssh-traffic-in
@@ -112,12 +104,12 @@ fw_redundant()
     $IPT -N allow-ssh-traffic-out
     $IPT -F allow-ssh-traffic-out
     $IPT -A allow-ssh-traffic-out -p tcp --dport 22 -j ACCEPT
-  
+
     einfo "Creating outgoing dns traffic chain"
     $IPT -N allow-dns-traffic-out
     $IPT -F allow-dns-traffic-out
     $IPT -A allow-dns-traffic-out -p udp -m udp --dport 53 -m conntrack --ctstate --state NEW -j ACCEPT
-    
+
     einfo "Creating incoming http/https traffic chain"
     $IPT -N allow-www-traffic-in
     $IPT -F allow-www-traffic-in
@@ -131,7 +123,7 @@ fw_redundant()
     $IPT -N allow-www-traffic-out
     $IPT -F allow-www-traffic-out
     $IPT -A allow-www-traffic-out -p tcp -m multiport --dports 80,443 -j ACCEPT
-       
+
     einfo "Creating incoming DHCP server"
     $IPT -N allow-dhcp-traffic-in
     $IPT -F allow-dhcp-traffic-in
@@ -145,35 +137,35 @@ fw_redundant()
     $IPT -N allow-dhcp-traffic-out
     $IPT -F allow-dhcp-traffic-out
     $IPT -A allow-dhcp-traffic-out -p udp --sport 67 --dport 68 -j ACCEPT
-    
+
     einfo "Creating incoming Torrent rules"
     $IPT -N allow-torrent-traffic-in
     $IPT -F allow-torrent-traffic-in
     #Flood protection
     $IPT -A INPUT -p udp -m multiport --dports 6881,8881 -m conntrack --ctstate --state NEW -j ACCEPT 
     $IPT -A INPUT -p tcp -m --port 6881:6999 -j ACCEPT 
-    
+
     einfo "Creating outgoing Torrent traffic chain"
     $IPT -N allow-torrent-traffic-out
     $IPT -F allow-torrent-traffic-out
     $IPT -A allow-torrent-traffic-out -p udp -m multiport --dports 6881,8881 -j ACCEPT
     $IPT -A allow-torrent-traffic-out -p tcp -m --port 6881:6999 -j ACCEPT
-    
+
     einfo "Creating incoming SAMBA rules"
     $IPT -N allow-samba-traffic-in
     $IPT -F allow-samba-traffic-in
     $IPT -A INPUT -i $IFACE0 -p tcp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate --state NEW -j ACCEPT
     $IPT -A INPUT -i $IFACE0 -p udp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate --state NEW -j ACCEPT
-    
+
     einfo "Creating outgoing SAMBAt traffic chain"
     $IPT -N allow-samba-traffic-out
     $IPT -F allow-samba-traffic-out
     $IPT -A allow-samba-traffic-out -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
     $IPT -A allow-samba-traffic-out -p tcp -m --dports 445,135,136,137,138,139 -j ACCEPT
-    
+
     if [[ $BRIDGED == "False" ]]; then
         if [[ $UAP == "AIRBASE" ]]; then
-            einfo "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
+            einfo "Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
             $IPT -N allow-ap-traffic
             $IPT -F allow-ap-traffic
             $IPT -A allow-ap-traffic -t nat -A POSTROUTING --out-interface $IFACE0 -j MASQUERADE
@@ -198,7 +190,7 @@ fw_redundant()
     fi
 
     [[ $ATTACK == "SslStrip" ]] && $IPT -N allow-sslstrip-traffic; $IPT -F allow-sslstrip-traffic; $IPT -t nat -A allow-sslstrip-traffic -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-    
+
     #Catch portscanners
     einfo "Creating portscan detection chain"
     $IPT -N check-flags
@@ -224,15 +216,6 @@ fw_redundant()
     $IPT -A INPUT -i lo -j ACCEPT
     $IPT -A INPUT -j allow-ssh-traffic-in
     $IPT -A INPUT -j allowed-connection
-  
-    # Apply and add invalid states to the chains
-    einfo "Applying chains to INPUT"
-    $IPTABLES -A INPUT -m state --state INVALID -j DROP
-    $IPTABLES -A INPUT -p icmp -j icmp_allowed
-    $IPTABLES -A INPUT -j check-flags
-    $IPTABLES -A INPUT -i lo -j ACCEPT
-    $IPTABLES -A INPUT -j allow-ssh-traffic-in
-    $IPTABLES -A INPUT -j allowed-connection
 
     einfo "Applying chains to FORWARD"
     $IPTABLES -A FORWARD -m state --state INVALID -j DROP
@@ -252,6 +235,8 @@ fw_redundant()
     $IPTABLES -A OUTPUT -j allow-dns-traffic-out
     $IPTABLES -A OUTPUT -j allow-www-traffic-out
     $IPTABLES -A OUTPUT -j allowed-connection
-      
+
     /etc/init.d/iptables save
     /etc/init.d/iptables start
+}
+fw_start
