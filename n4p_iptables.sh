@@ -25,7 +25,6 @@ IPT="/sbin/iptables"
 AP="at0"
 VPN="tun0"
 VPNI="tap+"
-sessionfolder=/tmp/n4p
 get_name "IFACE0="; IFACE0=$USE
 get_name "IFACE1="; IFACE1=$USE
 get_name "AP="; UAP=$USE
