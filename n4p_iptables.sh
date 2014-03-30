@@ -38,6 +38,7 @@ BLD_PUR=${txtbld}$(tput setaf 5) # purple
 BLD_TEA=${txtbld}$(tput setaf 6) # teal
 TXT_RST=$(tput sgr0)             # Reset
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
+INFO="${BLD_TEA}[${TXT_RST}${BLD_PUR} % ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
 echo "$(cat ${DIR_LOGO}/firewall.logo)"; sleep 2.5
 
@@ -52,13 +53,13 @@ fi
 fw_start()
 {
     ## Flush rules
-    echo -en "Flushing old rules\n"
+    echo -en "$INFO Flushing old rules\n"
     /etc/init.d/iptables stop
     $IPT -F
     $IPT -X
 
     # Set default policies for all three default chains
-    echo -en "Setting default policies\n"
+    echo -en "$INFO Setting default policies\n"
     $IPT -P INPUT DROP
     $IPT -P OUTPUT ACCEPT
     echo 1 > /proc/sys/net/ipv4/ip_forward
@@ -79,34 +80,34 @@ fw_start()
 
 
     #Incoming traffic
-    echo -en "Creating incoming ssh traffic chain\n"
+    echo -en "$INFO Creating incoming ssh traffic chain\n"
     $IPT -N allow-ssh-traffic-in
     #Flood protection
     $IPT -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --dport 22 -j ACCEPT
     $IPT -A allow-ssh-traffic-in -m conntrack --ctstate NEW -p tcp --dport 22 -j ACCEPT
 
-    echo -en "Creating dns traffic chain\n"
+    echo -en "$INFO Creating dns traffic chain\n"
     $IPT -N allow-dns-traffic-in
     $IPT -A allow-dns-traffic-in -p udp -m udp --dport 53 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT
 
-    echo -en "Creating incoming http/https traffic chain\n"
+    echo -en "$INFO Creating incoming http/https traffic chain\n"
     $IPT -N allow-www-traffic-in
     $IPT -A allow-www-traffic-in -m limit --limit 1/second -p tcp -m multiport --dports 443 -j ACCEPT
     $IPT -A INPUT -p tcp -m multiport --dports 443 -m conntrack --ctstate NEW -j ACCEPT
 
-    echo -en "Creating incoming DHCP server\n"
+    echo -en "$INFO Creating incoming DHCP server\n"
     $IPT -N allow-dhcp-traffic-in
     #Flood protection
     $IPT -A allow-dhcp-traffic-in -m limit --limit 1/second -p udp --sport 67 --dport 68 -j ACCEPT
     $IPT -A allow-dhcp-traffic-in -m conntrack --ctstate NEW,RELATED,ESTABLISHED -p udp --sport 67 --dport 68 -j ACCEPT
 
-    echo -en "Creating incoming Torrent rules\n"
+    echo -en "$INFO Creating incoming Torrent rules\n"
     $IPT -N allow-torrent-traffic-in
     $IPT -A allow-torrent-traffic-in -p udp -m multiport --dports 6881,8881 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
     $IPT -A allow-torrent-traffic-in -p tcp -m multiport --dports 6881,6999 -j ACCEPT
 
 
-    echo -en "Creating incoming SAMBA rules\n"
+    echo -en "$INFO Creating incoming SAMBA rules\n"
     $IPT -N allow-samba-traffic-in
     $IPT -A allow-samba-traffic-in -p tcp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
     $IPT -A allow-samba-traffic-in -p udp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
@@ -114,7 +115,7 @@ fw_start()
 
     if [[ $BRIDGED == "False" ]]; then
         if [[ $UAP == "AIRBASE" ]]; then
-            echo -en "Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
+            echo -en "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
             $IPT -A POSTROUTING -t nat --out-interface $IFACE0 -j MASQUERADE
             #Be generous with the AP
             $IPT -A allowed-connection -i $AP -j ACCEPT
@@ -135,7 +136,7 @@ fw_start()
     [[ $ATTACK == "SslStrip" ]] && $IPT  -t nat -A PREROUTING -i $AP -p tcp --destination-port 80 -j REDIRECT --to-ports 10000
 
     #ICMP traffic
-    echo -en "Creating icmp chain\n"
+    echo -en "$INFO Creating icmp chain\n"
     $IPT -A allowed-connection -p icmp --icmp-type echo-request -m recent --name ping_limiter --set
     $IPT -A allowed-connection -p icmp --icmp-type echo-request -m recent --name ping_limiter --update --hitcount 6 --seconds 4 -j DROP
     $IPT -A allowed-connection -p icmp --icmp-type echo-request -j ACCEPT
@@ -147,7 +148,7 @@ fw_start()
     $IPT -A allowed-connection -p icmp -j LOG --log-prefix "Bad ICMP traffic:"
 
     # Apply and add invalid states to the chains
-    echo -en "Applying chains to INPUT\n"
+    echo -en "$INFO Applying chains to INPUT\n"
     $IPT -A INPUT -j allow-ssh-traffic-in
     $IPT -A INPUT -j allow-dhcp-traffic-in
     $IPT -A INPUT -j allow-samba-traffic-in
