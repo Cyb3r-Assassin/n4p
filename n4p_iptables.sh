@@ -45,30 +45,27 @@ echo "$(cat ${DIR_LOGO}/firewall.logo)"; sleep 2.5
 ##################################################################
 ######################Build the firewall##########################
 ##################################################################
+if [ -e /proc/sys/net/ipv4/tcp_ecn ]
+then
+        echo 0 > /proc/sys/net/ipv4/tcp_ecn
+fi
+
 fw_start()
 {
     ## Flush rules
-    einfo "Flushing old rules\n"
+    echo -en "Flushing old rules\n"
     /etc/init.d/iptables stop
     $IPT -F
-    $IPT -t nat -F
     $IPT -X
-    $IPT -t nat -X
-    $IPT -t mangle -X
-    $IPT -F FORWARD
-    $IPT -t filter --flush FORWARD
-    $IPT -t filter --flush INPUT
 
     # Set default policies for all three default chains
-    einfo "Setting default policies\n"
+    echo -en "Setting default policies\n"
     $IPT -P INPUT DROP
     $IPT -P OUTPUT ACCEPT
     echo 1 > /proc/sys/net/ipv4/ip_forward
     $IPT -P FORWARD ACCEPT
     $IPT -N allowed-connection
-    $IPT -F allowed-connection
     $IPT -A allowed-connection -i lo -j ACCEPT
-    $IPT -A allowed-connection -o lo -j ACCEPT
     if [[ $USE_VPN == True ]]; then
         $IPT -A allowed-connection -i $VPN -j ACCEPT
         $IPT -A allowed-connection -i $VPNI -j ACCEPT
@@ -76,165 +73,99 @@ fw_start()
         $IPT -A allowed-connection -o $VPNI -j ACCEPT
         /etc/init.d/openvpn start
     fi
-    $IPT -A allowed-connection -i $IFACE0 -m state --state NEW -j DROP
-    $IPT -A allowed-connection -i $IFACE0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-    $IPT -A allowed-connection -i $IFACE0 -m limit -j LOG --log-prefix "Bad packet from ${IFACE0}:"
-    $IPT -A allowed-connection -j DROP
 
-    #ICMP traffic
-    einfo "Creating icmp chain"
-    $IPT -N icmp_allowed
-    $IPT -F icmp_allowed
-    $IPT -A icmp_allowed -m state --state NEW -p icmp --icmp-type time-exceeded -j ACCEPT
-    $IPT -A icmp_allowed -m state --state NEW -p icmp --icmp-type destination-unreachable -j ACCEPT
-    $IPT -A icmp_allowed -p icmp -j LOG --log-prefix "Bad ICMP traffic:"
-    $IPT -A icmp_allowed -p icmp -j DROP
+    $IPT -A allowed-connection -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+    $IPT -A allowed-connection -m conntrack --ctstate INVALID -j DROP
+    $IPT -A allowed-connection -m limit -j LOG --log-prefix "Bad packet from ${IFACE0}:"
+
 
     #Incoming traffic
-    einfo "Creating incoming ssh traffic chain"
+    echo -en "Creating incoming ssh traffic chain\n"
     $IPT -N allow-ssh-traffic-in
-    $IPT -F allow-ssh-traffic-in
     #Flood protection
-    $IPT -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL RST --dport 22 -j ACCEPT
-    $IPT -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL FIN --dport 22 -j ACCEPT
-    $IPT -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL SYN --dport 22 -j ACCEPT
-    $IPT -A allow-ssh-traffic-in -m state --state RELATED,ESTABLISHED -p tcp --dport 22 -j ACCEPT
-    #outgoing traffic
-    einfo "Creating outgoing ssh traffic chain"
-    $IPT -N allow-ssh-traffic-out
-    $IPT -F allow-ssh-traffic-out
-    $IPT -A allow-ssh-traffic-out -p tcp --dport 22 -j ACCEPT
+    $IPT -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --dport 22 -j ACCEPT
+    $IPT -A allow-ssh-traffic-in -m conntrack --ctstate NEW -p tcp --dport 22 -j ACCEPT
 
-    einfo "Creating outgoing dns traffic chain"
-    $IPT -N allow-dns-traffic-out
-    $IPT -F allow-dns-traffic-out
-    $IPT -A allow-dns-traffic-out -p udp -m udp --dport 53 -m conntrack --ctstate --state NEW -j ACCEPT
+    echo -en "Creating dns traffic chain\n"
+    $IPT -N allow-dns-traffic-in
+    $IPT -A allow-dns-traffic-in -p udp -m udp --dport 53 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT
 
-    einfo "Creating incoming http/https traffic chain"
+    echo -en "Creating incoming http/https traffic chain\n"
     $IPT -N allow-www-traffic-in
-    $IPT -F allow-www-traffic-in
-    #Flood protection
-    $IPT -A allow-www-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL RST -m multiport --dports 80,443 -j ACCEPT
-    $IPT -A allow-www-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL FIN -m multiport --dports 80,443 -j ACCEPT
-    $IPT -A allow-www-traffic-in -m limit --limit 1/second -p tcp --tcp-flags ALL SYN -m multiport --dports 80,443 -j ACCEPT
-    $IPT -A allow-www-traffic-in -m state --state RELATED,ESTABLISHED -p tcp -m multiport --dports 80,443 -j ACCEPT
+    $IPT -A allow-www-traffic-in -m limit --limit 1/second -p tcp -m multiport --dports 443 -j ACCEPT
+    $IPT -A INPUT -p tcp -m multiport --dports 443 -m conntrack --ctstate NEW -j ACCEPT
 
-    einfo "Creating outgoing http/https traffic chain"
-    $IPT -N allow-www-traffic-out
-    $IPT -F allow-www-traffic-out
-    $IPT -A allow-www-traffic-out -p tcp -m multiport --dports 80,443 -j ACCEPT
-
-    einfo "Creating incoming DHCP server"
+    echo -en "Creating incoming DHCP server\n"
     $IPT -N allow-dhcp-traffic-in
-    $IPT -F allow-dhcp-traffic-in
     #Flood protection
-    $IPT -A allow-dhcp-traffic-in -m limit --limit 1/second -p udp --tcp-flags ALL RST --sport 67 --dport 68 -j ACCEPT
-    $IPT -A allow-dhcp-traffic-in -m limit --limit 1/second -p udp --tcp-flags ALL FIN --sport 67 --dport 68 -j ACCEPT
-    $IPT -A allow-dhcp-traffic-in -m limit --limit 1/second -p udp --tcp-flags ALL SYN --sport 67 --dport 68 -j ACCEPT
-    $IPT -A allow-dhcp-traffic-in -m state --state RELATED,ESTABLISHED -p udp --sport 67 --dport 68 -j ACCEPT
+    $IPT -A allow-dhcp-traffic-in -m limit --limit 1/second -p udp --sport 67 --dport 68 -j ACCEPT
+    $IPT -A allow-dhcp-traffic-in -m conntrack --ctstate NEW,RELATED,ESTABLISHED -p udp --sport 67 --dport 68 -j ACCEPT
 
-    einfo "Creating outgoing DHCP server"
-    $IPT -N allow-dhcp-traffic-out
-    $IPT -F allow-dhcp-traffic-out
-    $IPT -A allow-dhcp-traffic-out -p udp --sport 67 --dport 68 -j ACCEPT
-
-    einfo "Creating incoming Torrent rules"
+    echo -en "Creating incoming Torrent rules\n"
     $IPT -N allow-torrent-traffic-in
-    $IPT -F allow-torrent-traffic-in
-    #Flood protection
-    $IPT -A INPUT -p udp -m multiport --dports 6881,8881 -m conntrack --ctstate --state NEW -j ACCEPT 
-    $IPT -A INPUT -p tcp -m --port 6881:6999 -j ACCEPT 
+    $IPT -A allow-torrent-traffic-in -p udp -m multiport --dports 6881,8881 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
+    $IPT -A allow-torrent-traffic-in -p tcp -m multiport --dports 6881,6999 -j ACCEPT
 
-    einfo "Creating outgoing Torrent traffic chain"
-    $IPT -N allow-torrent-traffic-out
-    $IPT -F allow-torrent-traffic-out
-    $IPT -A allow-torrent-traffic-out -p udp -m multiport --dports 6881,8881 -j ACCEPT
-    $IPT -A allow-torrent-traffic-out -p tcp -m --port 6881:6999 -j ACCEPT
 
-    einfo "Creating incoming SAMBA rules"
+    echo -en "Creating incoming SAMBA rules\n"
     $IPT -N allow-samba-traffic-in
-    $IPT -F allow-samba-traffic-in
-    $IPT -A INPUT -i $IFACE0 -p tcp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate --state NEW -j ACCEPT
-    $IPT -A INPUT -i $IFACE0 -p udp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate --state NEW -j ACCEPT
+    $IPT -A allow-samba-traffic-in -p tcp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
+    $IPT -A allow-samba-traffic-in -p udp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
 
-    einfo "Creating outgoing SAMBAt traffic chain"
-    $IPT -N allow-samba-traffic-out
-    $IPT -F allow-samba-traffic-out
-    $IPT -A allow-samba-traffic-out -p udp -m multiport --dports 445,135,136,137,138,139 -j ACCEPT
-    $IPT -A allow-samba-traffic-out -p tcp -m --dports 445,135,136,137,138,139 -j ACCEPT
 
     if [[ $BRIDGED == "False" ]]; then
         if [[ $UAP == "AIRBASE" ]]; then
-            einfo "Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
-            $IPT -N allow-ap-traffic
-            $IPT -F allow-ap-traffic
-            $IPT -A allow-ap-traffic -t nat -A POSTROUTING --out-interface $IFACE0 -j MASQUERADE
-            eend $?
+            echo -en "Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
+            $IPT -A POSTROUTING -t nat --out-interface $IFACE0 -j MASQUERADE
             #Be generous with the AP
-            $IPT -A allow-ap-traffic -i $AP -m state --state NEW -j DROP
-            $IPT -A allow-ap-traffic -i $AP -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-            $IPT -A allow-ap-traffic -i $AP -m limit -j LOG --log-prefix "Bad packet from ${AP}:"
-            $IPT -A allow-ap-traffic -j DROP
+            $IPT -A allowed-connection -i $AP -j ACCEPT
+            $IPT -A allowed-connection -i $AP -m limit -j LOG --log-prefix "Bad packet from ${AP}:"
             #Be strict with what we allow the AP to do
-            #$IPT -I allow-ap-traffic -i $AP -j DROP 
-            #$IPT -A allow-ap-traffic -p tcp -i $AP -m multiport --dports 80,443,53,68,67 -j ACCEPT
-            #$IPT -A allow-ap-traffic -p udp -i $AP -m multiport --dports 80,443,53,68,67 -j ACCEPT
-            #$IPT -A allow-ap-traffic -i $AP -o $IFACE0 -j ACCEPT
+            #$IPT -A allowed-connection -p tcp -i $AP -m multiport --dports 80,443,53,68,67 -j ACCEPT
+            #$IPT -A allowed-connection -p udp -i $AP -m multiport --dports 80,443,53,68,67 -j ACCEPT
+            $IPT -A allowed-connection -i $AP -o $IFACE0 -j ACCEPT
         elif [[ $UAP == "HOSTAPD" ]]; then
             echo -ne "$INFO Allowing wirless for hostapd, routing $AP through $IFACE0 be sure hostapd was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
-            $IPT -A allow-ap-traffic -i $IFACE1 -o $IFACE0 -j ACCEPT
-            $IPT -A allow-ap-traffic -i $IFACE0 -o $IFACE1 -j ACCEPT
+            $IPT -A allowed-connection -i $IFACE1 -o $IFACE0 -j ACCEPT
+            $IPT -A allowed-connection -i $IFACE0 -o $IFACE1 -j ACCEPT
         else
-            echo "[$WARN] ERROR in AP configuration file, no AP found"
+            echo -ne "[$WARN] ERROR in AP configuration file, no AP found\n"
         fi
     fi
 
-    [[ $ATTACK == "SslStrip" ]] && $IPT -N allow-sslstrip-traffic; $IPT -F allow-sslstrip-traffic; $IPT -t nat -A allow-sslstrip-traffic -p tcp --destination-port 80 -j REDIRECT --to-port 10000
+    [[ $ATTACK == "SslStrip" ]] && $IPT  -t nat -A PREROUTING -i $AP -p tcp --destination-port 80 -j REDIRECT --to-ports 10000
 
-    #Catch portscanners
-    einfo "Creating portscan detection chain"
-    $IPT -N check-flags
-    $IPT -F check-flags
-    $IPT -A check-flags -p tcp --tcp-flags ALL FIN,URG,PSH -m limit --limit 5/minute -j LOG --log-level alert --log-prefix "NMAP-XMAS:"
-    $IPT -A check-flags -p tcp --tcp-flags ALL FIN,URG,PSH -j DROP
-    $IPT -A check-flags -p tcp --tcp-flags ALL ALL -m limit --limit 5/minute -j LOG --log-level 1 --log-prefix "XMAS:"
-    $IPT -A check-flags -p tcp --tcp-flags ALL ALL -j DROP
-    $IPT -A check-flags -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -m limit --limit 5/minute -j LOG --log-level 1 --log-prefix "XMAS-PSH:"
-    $IPT -A check-flags -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
-    $IPT -A check-flags -p tcp --tcp-flags ALL NONE -m limit --limit 5/minute -j LOG --log-level 1 --log-prefix "NULL_SCAN:"
-    $IPT -A check-flags -p tcp --tcp-flags ALL NONE -j DROP
-    $IPT -A check-flags -p tcp --tcp-flags SYN,RST SYN,RST -m limit --limit 5/minute -j LOG --log-level 5 --log-prefix "SYN/RST:"
-    $IPT -A check-flags -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
-    $IPT -A check-flags -p tcp --tcp-flags SYN,FIN SYN,FIN -m limit --limit 5/minute -j LOG --log-level 5 --log-prefix "SYN/FIN:"
-    $IPT -A check-flags -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+    #ICMP traffic
+    echo -en "Creating icmp chain\n"
+    $IPT -A allowed-connection -p icmp --icmp-type echo-request -m recent --name ping_limiter --set
+    $IPT -A allowed-connection -p icmp --icmp-type echo-request -m recent --name ping_limiter --update --hitcount 6 --seconds 4 -j DROP
+    $IPT -A allowed-connection -p icmp --icmp-type echo-request -j ACCEPT
+    #Trap Portscanners
+    $IPT -I TCP -p tcp -m recent --update --seconds 60 --name TCP-PORTSCAN -j REJECT --reject-with tcp-rst
+    $IPT -A allowed-connection -p tcp -m recent --set --name TCP-PORTSCAN -j REJECT --reject-with tcp-rst
+    $IPT -I UDP -p udp -m recent --update --seconds 60 --name UDP-PORTSCAN -j REJECT --reject-with port-unreach
+    $IPT -A allowed-connection -p udp -m recent --set --name UDP-PORTSCAN -j REJECT --reject-with icmp-port-unreach
+    $IPT -A allowed-connection -p icmp -j LOG --log-prefix "Bad ICMP traffic:"
 
     # Apply and add invalid states to the chains
-    einfo "Applying chains to INPUT"
-    $IPT -A INPUT -m state --state INVALID -j DROP
-    $IPT -A INPUT -p icmp -j icmp_allowed
-    $IPT -A INPUT -j check-flags
-    $IPT -A INPUT -i lo -j ACCEPT
+    echo -en "Applying chains to INPUT\n"
     $IPT -A INPUT -j allow-ssh-traffic-in
+    $IPT -A INPUT -j allow-dhcp-traffic-in
+    $IPT -A INPUT -j allow-samba-traffic-in
+    $IPT -A INPUT -j allow-dns-traffic-in
+    $IPT -A INPUT -j allow-torrent-traffic-in
+    $IPT -A INPUT -j allow-www-traffic-in
     $IPT -A INPUT -j allowed-connection
+    $IPT -A INPUT -j DROP
+    $IPT -A INPUT -j REJECT --reject-with icmp-proto-unreachable
 
-    einfo "Applying chains to FORWARD"
-    $IPTABLES -A FORWARD -m state --state INVALID -j DROP
-    $IPTABLES -A FORWARD -p icmp -j icmp_allowed
-    $IPTABLES -A FORWARD -j check-flags
-    $IPTABLES -A FORWARD -o lo -j ACCEPT
-    $IPTABLES -A FORWARD -j allow-ssh-traffic-in
-    $IPTABLES -A FORWARD -j allow-www-traffic-out
-    $IPTABLES -A FORWARD -j allowed-connection
 
-    einfo "Applying chains to OUTPUT"
-    $IPTABLES -A OUTPUT -m state --state INVALID -j DROP
-    $IPTABLES -A OUTPUT -p icmp -j icmp_allowed
-    $IPTABLES -A OUTPUT -j check-flags
-    $IPTABLES -A OUTPUT -o lo -j ACCEPT
-    $IPTABLES -A OUTPUT -j allow-ssh-traffic-out
-    $IPTABLES -A OUTPUT -j allow-dns-traffic-out
-    $IPTABLES -A OUTPUT -j allow-www-traffic-out
-    $IPTABLES -A OUTPUT -j allowed-connection
+    for x in lo $IFACE0 $IFACE1 $AP $VPN $VPI
+    do
+        if [ -e /proc/sys/net/ipv4/conf/${x}/rp_filter ]; then
+            echo 1 > /proc/sys/net/ipv4/conf/${x}/rp_filter
+        fi
+    done
 
     /etc/init.d/iptables save
     /etc/init.d/iptables start
