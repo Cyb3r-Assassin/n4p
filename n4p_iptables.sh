@@ -40,13 +40,12 @@ TXT_RST=$(tput sgr0)             # Reset
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 INFO="${BLD_TEA}[${TXT_RST}${BLD_PUR} % ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
-echo "$(cat ${DIR_LOGO}/firewall.logo)"; sleep 2.5
+echo "$(cat ${DIR_LOGO}/firewall.logo)"; sleep 2
 
 ##################################################################
 ######################Build the firewall##########################
 ##################################################################
-if [ -e /proc/sys/net/ipv4/tcp_ecn ]
-then
+if [ -e /proc/sys/net/ipv4/tcp_ecn ]; then
         echo 0 > /proc/sys/net/ipv4/tcp_ecn
 fi
 
@@ -64,16 +63,23 @@ fw_start()
     $IPT -P OUTPUT ACCEPT
     echo 1 > /proc/sys/net/ipv4/ip_forward
     $IPT -P FORWARD ACCEPT
+    #For by device forwarding restrictions
+    #$IPT -N fw-interfaces
+    #$IPT -N fw-open
+    #$IPT -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+    #$IPT -A FORWARD -j fw-interfaces 
+    #$IPT -A FORWARD -j fw-open 
+    #$IPT -A FORWARD -j REJECT --reject-with icmp-host-unreach
+    #$IPT -P FORWARD DROP
+
+    #Allow
     $IPT -N allowed-connection
     $IPT -A allowed-connection -i lo -j ACCEPT
     if [[ $USE_VPN == True ]]; then
         $IPT -A allowed-connection -i $VPN -j ACCEPT
         $IPT -A allowed-connection -i $VPNI -j ACCEPT
-        $IPT -A allowed-connection -o $VPN -j ACCEPT
-        $IPT -A allowed-connection -o $VPNI -j ACCEPT
         /etc/init.d/openvpn start
     fi
-
     $IPT -A allowed-connection -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
     $IPT -A allowed-connection -m conntrack --ctstate INVALID -j DROP
     $IPT -A allowed-connection -m limit -j LOG --log-prefix "Bad packet from ${IFACE0}:"
@@ -92,12 +98,12 @@ fw_start()
 
     echo -en "$INFO Creating incoming http/https traffic chain\n"
     $IPT -N allow-www-traffic-in
-    $IPT -A allow-www-traffic-in -m limit --limit 1/second -p tcp -m multiport --dports 443 -j ACCEPT
-    $IPT -A INPUT -p tcp -m multiport --dports 443 -m conntrack --ctstate NEW -j ACCEPT
+    $IPT -A allow-www-traffic-in -m limit --limit 1/second -p tcp -m multiport --dports 80,443 -j ACCEPT
+    $IPT -A allow-www-traffic-in -p tcp -m multiport --dports 80,443 -m conntrack --ctstate NEW -j ACCEPT
+    #$IPT -t nat -A PREROUTING -i $IFACE0 -p tcp --dport 80 -j --dport 443
 
     echo -en "$INFO Creating incoming DHCP server\n"
     $IPT -N allow-dhcp-traffic-in
-    #Flood protection
     $IPT -A allow-dhcp-traffic-in -m limit --limit 1/second -p udp --sport 67 --dport 68 -j ACCEPT
     $IPT -A allow-dhcp-traffic-in -m conntrack --ctstate NEW,RELATED,ESTABLISHED -p udp --sport 67 --dport 68 -j ACCEPT
 
@@ -141,12 +147,10 @@ fw_start()
     $IPT -A allowed-connection -p icmp --icmp-type echo-request -m recent --name ping_limiter --update --hitcount 6 --seconds 4 -j DROP
     $IPT -A allowed-connection -p icmp --icmp-type echo-request -j ACCEPT
     #Trap Portscanners
-    $IPT -I TCP -p tcp -m recent --update --seconds 60 --name TCP-PORTSCAN -j REJECT --reject-with tcp-rst
     $IPT -A allowed-connection -p tcp -m recent --set --name TCP-PORTSCAN -j REJECT --reject-with tcp-rst
-    $IPT -I UDP -p udp -m recent --update --seconds 60 --name UDP-PORTSCAN -j REJECT --reject-with port-unreach
     $IPT -A allowed-connection -p udp -m recent --set --name UDP-PORTSCAN -j REJECT --reject-with icmp-port-unreach
     $IPT -A allowed-connection -p icmp -j LOG --log-prefix "Bad ICMP traffic:"
-
+    
     # Apply and add invalid states to the chains
     echo -en "$INFO Applying chains to INPUT\n"
     $IPT -A INPUT -j allow-ssh-traffic-in
@@ -158,7 +162,6 @@ fw_start()
     $IPT -A INPUT -j allowed-connection
     $IPT -A INPUT -j DROP
     $IPT -A INPUT -j REJECT --reject-with icmp-proto-unreachable
-
 
     for x in lo $IFACE0 $IFACE1 $AP $VPN $VPI
     do
