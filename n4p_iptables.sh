@@ -23,8 +23,10 @@ get_name() # Retrieve the config values
 
 IPT="/sbin/iptables"
 AP="at0"
+# For multiple VPN just enumerate the tun sequence.
 VPN="tun0"
 VPNI="tap+"
+#VPN="tun1"
 get_name "IFACE0="; IFACE0=$USE
 get_name "IFACE1="; IFACE1=$USE
 get_name "AP="; UAP=$USE
@@ -90,33 +92,38 @@ fw_start()
     $IPT -N allow-ssh-traffic-in
     #Flood protection
     $IPT -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --dport 22 -j ACCEPT
-    $IPT -A allow-ssh-traffic-in -m conntrack --ctstate NEW -p tcp --dport 22 -j ACCEPT
+    # For public release restrict multiple interfaces
+    $IPT -A allow-ssh-traffic-in -i $IFACE0 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -p tcp --dport 22 -j ACCEPT
+    #$IPT -A allow-ssh-traffic-in -i eth1 -m conntrack --ctstate NEW -p tcp --dport 22 -j ACCEPT
 
     echo -en "$INFO Creating dns traffic chain\n"
     $IPT -N allow-dns-traffic-in
-    $IPT -A allow-dns-traffic-in -p udp -m udp --dport 53 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT
+    $IPT -A allow-dns-traffic-in -p udp -m udp --dport 53 -m conntrack --ctstate NEW -j ACCEPT
 
     echo -en "$INFO Creating incoming http/https traffic chain\n"
     $IPT -N allow-www-traffic-in
     $IPT -A allow-www-traffic-in -m limit --limit 1/second -p tcp -m multiport --dports 80,443 -j ACCEPT
-    $IPT -A allow-www-traffic-in -p tcp -m multiport --dports 80,443 -m conntrack --ctstate NEW -j ACCEPT
-    #$IPT -t nat -A PREROUTING -i $IFACE0 -p tcp --dport 80 -j --dport 443
-
+    # For public release restrict multiple interfaces
+    $IPT -A allow-www-traffic-in -p tcp -i $IFACE0 -m multiport --dports 80,443 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT
+    #$IPT -A allow-www-traffic-in -p tcp -i eth1 -m multiport --dports 80,443 -m conntrack --ctstate NEW -j ACCEPT
+    
     echo -en "$INFO Creating incoming DHCP server\n"
     $IPT -N allow-dhcp-traffic-in
     $IPT -A allow-dhcp-traffic-in -m limit --limit 1/second -p udp --sport 67 --dport 68 -j ACCEPT
-    $IPT -A allow-dhcp-traffic-in -m conntrack --ctstate NEW,RELATED,ESTABLISHED -p udp --sport 67 --dport 68 -j ACCEPT
+    # For public release restrict multiple interfaces
+    $IPT -A allow-dhcp-traffic-in -i $IFACE0 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -p udp --sport 67 --dport 68 -j ACCEPT
+    #$IPT -A allow-dhcp-traffic-in -i eth1 -m conntrack --ctstate NEW -p udp --sport 67 --dport 68 -j ACCEPT
 
     echo -en "$INFO Creating incoming Torrent rules\n"
     $IPT -N allow-torrent-traffic-in
-    $IPT -A allow-torrent-traffic-in -p udp -m multiport --dports 6881,8881 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
-    $IPT -A allow-torrent-traffic-in -p tcp -m multiport --dports 6881,6999 -j ACCEPT
+    $IPT -A allow-torrent-traffic-in -p udp -m multiport --dports 6881,8881 -m conntrack --ctstate NEW -j ACCEPT
+    $IPT -A allow-torrent-traffic-in -p tcp -m multiport --dports 6881,6999 -m conntrack --ctstate NEW -j ACCEPT
 
 
     echo -en "$INFO Creating incoming SAMBA rules\n"
     $IPT -N allow-samba-traffic-in
-    $IPT -A allow-samba-traffic-in -p tcp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
-    $IPT -A allow-samba-traffic-in -p udp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
+    $IPT -A allow-samba-traffic-in -p tcp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW -j ACCEPT
+    $IPT -A allow-samba-traffic-in -p udp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW -j ACCEPT
 
 
     if [[ $BRIDGED == "False" ]]; then
