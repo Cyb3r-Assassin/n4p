@@ -125,6 +125,11 @@ fw_start()
     $IPT -A allow-samba-traffic-in -p tcp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW -j ACCEPT
     $IPT -A allow-samba-traffic-in -p udp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW -j ACCEPT
 
+    $IPT -A POSTROUTING -t nat -s 10.0.0.0/8 -o "$IFACE0" -j MASQUERADE
+    #$IPT -A POSTROUTING -t nat --out-interface $IFACE0 -j MASQUERADE
+    #$IPT -A allowed-connection -i virbr0 -o $IFACE0 -j ACCEPT
+    #$IPT -A allowed-connection -i $IFACE0 -o virbr0 -j ACCEPT
+
 
     if [[ $BRIDGED == "False" ]]; then
         if [[ $UAP == "AIRBASE" ]]; then
