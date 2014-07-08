@@ -106,7 +106,7 @@ fw_start()
     # For public release restrict multiple interfaces
     $IPT -A allow-www-traffic-in -p tcp -i $IFACE0 -m multiport --dports 80,443 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT
     #$IPT -A allow-www-traffic-in -p tcp -i eth1 -m multiport --dports 80,443 -m conntrack --ctstate NEW -j ACCEPT
-    
+
     echo -en "$INFO Creating incoming DHCP server\n"
     $IPT -N allow-dhcp-traffic-in
     $IPT -A allow-dhcp-traffic-in -m limit --limit 1/second -p udp --sport 67 --dport 68 -j ACCEPT
@@ -125,10 +125,15 @@ fw_start()
     $IPT -A allow-samba-traffic-in -p tcp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW -j ACCEPT
     $IPT -A allow-samba-traffic-in -p udp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW -j ACCEPT
 
-    $IPT -A POSTROUTING -t nat -s 10.0.0.0/8 -o "$IFACE0" -j MASQUERADE
+    #advanced Libvirt KVM/QEMU Virtual machine rules
+   ## $IPT -A POSTROUTING -t nat -s 10.0.0.0/8 -o "$IFACE0" -j MASQUERADE
     #$IPT -A POSTROUTING -t nat --out-interface $IFACE0 -j MASQUERADE
     #$IPT -A allowed-connection -i virbr0 -o $IFACE0 -j ACCEPT
     #$IPT -A allowed-connection -i $IFACE0 -o virbr0 -j ACCEPT
+
+    #echo -en "$INFO Creating incoming synergy rules\n"
+    #$IPT -N allow-synergy-traffic-in
+    #$IPT -A allow-synergy-traffic-in -i eth1 -m conntrack --ctstate NEW -p udp --dport 25800 -j ACCEPT
 
 
     if [[ $BRIDGED == "False" ]]; then
