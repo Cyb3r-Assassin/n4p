@@ -66,7 +66,7 @@ https://www.youtube.com/watch?v=1Vt6D_XGJTQ
 
 **Known Limitations**
 
-HOSTAPD has not been released back into n4p yet.
+n4p can not use any wireless adapters that are currently loaned to Network Manager.
 
 **BUGS**
 

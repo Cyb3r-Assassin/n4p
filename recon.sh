@@ -74,7 +74,7 @@ doit()
     elif [[ $JOB == "wash" ]]; then
         sudo wash -i $MON --ignore-fcs
     elif [[ $JOB == "bully" ]]; then
-        sudo bully -b $BSSID -c $CHAN -B $MON
+        sudo bully -b $VICTIM_BSSID -c $CHAN -B $MON
     else
       echo "error that can't happen happened"
     fi
