@@ -80,7 +80,8 @@ menu()
         get_name "CRACK="; CRACK=$USE
         if [[ $CRACK == "Aircrack-ng" ]]; then
             sudo xterm -hold -bg black -fg blue -T "Cracking" -geometry 90x20 -e aircrack-ng ${sessionfolder}/${VICTIM_BSSID}-01.cap -w $WORD_LIST &>/dev/null &
-        else; echo "CRACK= configuration error, check config file"
+        else
+            echo "CRACK= configuration error, check config file"
         fi
     elif [[ $choice == 5 ]]; then
         get_name "ATTACK="; ATTACK=$USE
