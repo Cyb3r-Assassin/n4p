@@ -105,11 +105,11 @@ menu()
         [[ ! -f ${sessionfolder}/recovered_passwords.pcap ]] && sudo touch ${sessionfolder}/recovered_passwords.pcap
         get_name "ETTERCAP_OPTIONS="; ETTERCAP_OPTIONS=$USE
         if [[ $BRIDGED == "True" ]]; then
-    	   sudo xterm -T "ettercap $BR_NAME" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $BR_NAME -w ${sessionfolder}/recovered_passwords.pcap &>/dev/null &
+          sudo xterm -T "ettercap $BR_NAME" -geometry 90x20 -e ettercap ${ETTERCAP_OPTIONS} -i ${BR_NAME} &>/dev/null &
         elif [[ $AP_NAME == "AIRBASE" ]]; then
-           sudo xterm -T "ettercap at0" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS &>/dev/null &
-        elif [[ $AP_NAME == "HOSTAPD" ]]; then
-           sudo xterm -T "ettercap $IFACE1" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w ${sessionfolder}/recovered_passwords.pcap &>/dev/null &
+           sudo xterm -T "ettercap at0" -geometry 90x20 -e ettercap -i at0 ${ETTERCAP_OPTIONS} -w ${sessionfolder}/recovered_passwords.pcap &>/dev/null &
+        #elif [[ $AP_NAME == "HOSTAPD" ]]; then
+        #   sudo xterm -T "ettercap $IFACE1" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w ${sessionfolder}/recovered_passwords.pcap &>/dev/null &
         fi
     elif [[ $choice == 9 ]]; then
         get_name "IFACE1="; IFACE1=$USE
