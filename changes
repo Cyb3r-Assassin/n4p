@@ -1,3 +1,6 @@
+1.2
+Fixed a bug in the code and config that referenced variables as duplicates if both category's were not null when launching Airbase as a functional AP..
+
 1.1 
 Fixed the stuff 1.0 broke.
 

@@ -49,7 +49,7 @@ if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snack
 
 get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
 get_name "CHAN="; CHAN=$USE
-get_name "BSSID="; BSSID=$USE
+get_name "LOCAL_BSSID="; LOCAL_BSSID=$USE
 [[ -n $(rfkill list | grep yes) ]] && rfkill unblock 0 || echo "You may need to run rfkill"
 
 do_it()

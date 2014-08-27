@@ -48,7 +48,7 @@ depends()
     get_name "IFACE1="; IFACE1=$USE
     get_name "ESSID="; ESSID=$USE
     get_name "STATION="; STATION=$USE
-    get_name "BSSID="; BSSID=$USE
+    get_name "LOCAL_BSSID="; LOCAL_BSSID=$USE
     get_name "CHAN="; CHAN=$USE
     get_name "BEACON="; BEACON=$USE
     get_name "PPS="; PPS=$USE
@@ -165,9 +165,10 @@ startairbase()
         if [[ $ATTACK == "Handshake" ]]; then
             airbase-ng -c $CHAN -a $VICTIM_BSSID -e $ESSID -$TYPE $ENCRYPTION -v $MON > ${sessionfolder}/logs/airbase-ng.log &
         elif [[ $ATTACK == "Karma" ]]; then
-            airbase-ng -c $CHAN -x $PPS -I $BEACON -a $BSSID -e $ESSID -P -C 15 -v $MON > ${sessionfolder}/logs/airbase-ng.log &
+            airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -C 15 -v $MON > ${sessionfolder}/logs/airbase-ng.log &
         else # This just gives us an AP for Sniffing
-            airbase-ng -c $CHAN -x $PPS -I $BEACON -a $BSSID -e $ESSID -P -v $MON > ${sessionfolder}/logs/airbase-ng.log &
+        
+            airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -v $MON > ${sessionfolder}/logs/airbase-ng.log &
         fi
         sleep 2
     fi
