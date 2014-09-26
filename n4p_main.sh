@@ -97,7 +97,7 @@ setupenv()
     
     sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
     [[ ! -d "$sessionfolder" ]] && mkdir "$sessionfolder"; mkdir -p "$sessionfolder" "${sessionfolder}/logs"
-    [[ -n $(rfkill list | grep yes) ]] && rfkill unblock 0
+    [[ -n $(rfkill list | grep yes) ]] && rfkill unblock wlan
 }
 
 settings()

@@ -4,7 +4,7 @@ TXT_RST=$(tput sgr0)             # Reset
 
 DIR_LOGO=/usr/share/n4p
 LOG_METALOG=/var/log/everything/current
-LOG_SYSLOG_NG=/var/log/messages
+LOG_SYSLOG_NG=/var/log/dhcpd.log
 
 if [[ -f $LOG_METALOG ]]; then
     USE=$LOG_METALOG
