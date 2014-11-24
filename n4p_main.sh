@@ -121,7 +121,7 @@ killemAll()
 {
     echo -e "\n\n$WARN The script has died. Major network configurations have been modified.\nWe must go down cleanly or your system will be left in a broken state!"
     pkill airbase-ng
-    airmon-zc stop $MON
+    airmon-ng stop $MON
 
     [[ $BRIDGED == "True" ]] && rebuild_network
     echo "$INFO The environment is now sanitized cya"
@@ -154,11 +154,11 @@ rebuild_network()
 trap killemAll INT HUP;
 
 ##################################################################
-###############Setup for Airbase-ng and airmon-zc#################
+###############Setup for Airbase-ng and airmon-ng#################
 ##################################################################
 startairbase()
 {
-    [[ -z $(ip addr | grep -i "$MON") ]] && airmon-zc start $IFACE1 || echo "faild airmon"
+    [[ -z $(ip addr | grep -i "$MON") ]] && airmon-ng start $IFACE1 || echo "faild airmon"
       # Add variable null checking so process doesn't crash without a report
     if [[ $MENUCHOICE == 1 ]]; then
         echo -n "$INFO STARTING SERVICE: AIRBASE-NG"
@@ -167,7 +167,6 @@ startairbase()
         elif [[ $ATTACK == "Karma" ]]; then
             airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -C 15 -v $MON > ${sessionfolder}/logs/airbase-ng.log &
         else # This just gives us an AP for Sniffing
-        
             airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -v $MON > ${sessionfolder}/logs/airbase-ng.log &
         fi
         sleep 2

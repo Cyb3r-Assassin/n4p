@@ -45,24 +45,24 @@ elif [[ $2 == "wash" ]]; then
     echo "${BLD_TEA}$(cat ${DIR_LOGO}/wash.logo)${TXT_RST}"; sleep 2.5
 fi
 
-if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
+if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-ng stop $MON; fi
 
 get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
 get_name "CHAN="; CHAN=$USE
 get_name "LOCAL_BSSID="; LOCAL_BSSID=$USE
-[[ -n $(rfkill list | grep yes) ]] && rfkill unblock wlan || echo "You may need to run rfkill"
+[[ -n $(rfkill list | grep yes) ]] && rfkill unblock wlan
 
 do_it()
 {
     if [[ -z $(ip addr | grep -i "$MON") ]]; then
         iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
-        airmon-zc start $IFACE1
+        airmon-ng start $IFACE1
     fi
     if [[ $JOB == "recon" ]]; then
         while [[ -z $(ip addr list | grep $MON) ]]; do
             sleep 0.5
         done
-        #/bin/sh -c "/usr/bin/launch '/usr/sbin/airmon-zc' 'start' 'wlan1mon' 'sudo -s'"
+        #/bin/sh -c "/usr/bin/launch '/usr/sbin/airmon-ng' 'start' 'wlan1mon' 'sudo -s'"
         xterm -hold -bg black -fg blue -T "Recon" -geometry 90x20 -e airodump-ng $MON &>/dev/null &
     elif [[ $JOB == "dump" ]]; then
         if [[ -f ${sessionfolder}/${VICTIM_BSSID}* ]]; then
@@ -93,7 +93,7 @@ keepalive()
 
 killAll()
 {
-    airmon-zc stop $MON
+    airmon-ng stop $MON
     echo "${BLD_TEA}$(cat ${DIR_LOGO}/die.logo)${TXT_RST}"
     sleep 2
     exit 0

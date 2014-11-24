@@ -1,3 +1,6 @@
+1.3
+Aircrack suit has made changes upstream that break n4p on live git builds of aircrack. This is marginally fixed here but still some bugs. Working on full comparability still.
+
 1.2
 Fixed a bug in the code and config that referenced variables as duplicates if both category's were not null when launching Airbase as a functional AP..
 
