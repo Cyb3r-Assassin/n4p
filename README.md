@@ -1,5 +1,5 @@
 ##N4P for Pentoo and Gentoo Linux.
-####Offensives network security application
+####Offensive network security framework
 
 * Fully manages system states automatically for Airbase-ng with bridging and ipv4_forwarding ability.
 * Configures all necessary elements and performs MITM, ARP, WPA Cracking, Sniffing and SSLstrip attacks.
@@ -56,11 +56,11 @@ network device attached to the network and ARP_VICTIM to IP or Gateway you are a
 
 https://www.youtube.com/watch?v=y0V74wtSnz0
 
->Sniffing SSL Passwords
+> Sniffing SSL Passwords
 
 https://www.youtube.com/watch?v=i5HptOlbsD0
 
->Sniffing network
+> Sniffing network
 
 https://www.youtube.com/watch?v=1Vt6D_XGJTQ
 
