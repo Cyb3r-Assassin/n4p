@@ -37,7 +37,6 @@ get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
 get_name "CHAN="; CHAN=$USE
 MON="${IFACE1}mon"
 
-echo "${BLD_TEA}$(cat ${DIR_LOGO}/dump.logo)${TXT_RST}"; sleep 2.5
 if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
 [[ -n $(rfkill list | grep yes) ]] && rfkill unblock wlan
 
@@ -71,6 +70,6 @@ killAll()
     airmon-zc stop $MON
     echo "${BLD_TEA}$(cat ${DIR_LOGO}/die.logo)${TXT_RST}"
     sleep 2
-    exit 0
+    exit
 }
 do_it
