@@ -52,7 +52,7 @@ sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then bu
 if [[ $NetworkManager == "True" ]]; then #n4p cant operate airmon and such with network manager hogging everything. We must kill it.
     if [[ $OS == "Pentoo" ]]; then
         get_RCstatus "NetworkManager"
-        [[ $STATUS == 'started' ]] && /etc/init.d/NetworkManager stop
+        [[ $STATUS == 'started' ]] && sudo /etc/init.d/NetworkManager stop
     else
         sudo service network-manager stop
     fi
