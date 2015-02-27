@@ -98,21 +98,6 @@ setupenv()
 
 settings()
 {
-    if [[ $NetworkManager == "True" ]]; then #n4p cant operate airmon and such with network manager hogging everything. We must kill it.
-        if [[ $OS == "Pentoo" ]]; then
-            get_RCstatus "NetworkManager"
-            [[ $STATUS == 'started' ]] && /etc/init.d/NetworkManager stop
-        else
-            service network-manager stop
-        fi
-    elif [[ $OS == "Pentoo" ]]; then
-        if [[ -e /etc/init.d/net.$IFACE1 ]]; then
-            echo "$INFO Getting status of $IFACE1"
-            get_RCstatus "net.$IFACE1"
-            [[ $STATUS == 'started' ]] && /etc/init.d/net.$IFACE1 stop
-        fi
-    fi
-
     [[ -z $(ip addr | grep -i "$MON") ]] && iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
 }
 

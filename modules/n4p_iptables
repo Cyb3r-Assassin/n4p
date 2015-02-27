@@ -136,7 +136,7 @@ fw_start()
     #$IPT -A allow-synergy-traffic-in -i eth1 -m conntrack --ctstate NEW -p udp --dport 25800 -j ACCEPT
 
 
-    if [[ $BRIDGED == "False" ]]; then
+    if [[ $BRIDGED == "False" ]]; then #We're going to control specific network flow coming through an accesspoint
         if [[ $UAP == "AIRBASE" ]]; then
             echo -en "$INFO Allowing wirless for airbase, routing $AP through $IFACE0 be sure airbase was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
             $IPT -A POSTROUTING -t nat --out-interface $IFACE0 -j MASQUERADE
@@ -168,7 +168,7 @@ fw_start()
     $IPT -A allowed-connection -p udp -m recent --set --name UDP-PORTSCAN -j REJECT --reject-with icmp-port-unreach
     $IPT -A allowed-connection -p icmp -j LOG --log-prefix "Bad ICMP traffic:"
     
-    # Apply and add invalid states to the chains
+    # Apply and add states to the chains
     echo -en "$INFO Applying chains to INPUT\n"
     $IPT -A INPUT -j allow-ssh-traffic-in
     $IPT -A INPUT -j allow-dhcp-traffic-in

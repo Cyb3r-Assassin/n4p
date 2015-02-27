@@ -1,7 +1,9 @@
-1.4
-upstraem aircrack changes fully addressed.
+2.0
+Upstraem aircrack changes addressed via ebuild, Gentoo/Pentoo only.
 
-hostapd working for WPE attacks
+Hostapd working for WPE attacks
+
+Hostapd added as accesspoint option
 
 Fixed very broken logic that had evolved in intiation processes in n4p_main.sh
 
@@ -9,25 +11,27 @@ Made changes to the ebuild.
 
 Changed the logic of assigned processes to the at0 interface to relate only to an as needed task.
 
-adjust SslStrip call process that allows it to be initiated individually without having to be built from an AP initiation with pre selected attack.
+Adjust SslStrip call process that allows it to be initiated individually without having to be built from an AP initiation with pre selected attack.
 
 Modulerized existing N4P scripts
 
 Broke out n4p_main.sh into segrigated scripts based on functions
 
-Creatied module for Access Point creations
-
-created the module for controlling bridge functions
-
-created the module for DHCP functions
-
-Fixed the code for adapter bridging (it's been broken for a while)
+Fixed the code for adapter bridging, support for Pentoo/Gentoo only! (it's been broken for a while)
 
 Added Hashcat functionality for cracking
 
 Added .cap to hccap conversions
 
 Added advanced user mode with shell interaction
+
+Added Network Manager support
+
+Added Kali support for wireless portions
+
+Hostapd Accesspoint added
+
+VPN works through the firewall module. Uses openvpn.
 
 
 1.3

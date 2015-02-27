@@ -9,11 +9,14 @@ Opening screenshot of n4p
 
 Configuration file modified by user. All Access Point options, devices, and attacking methods are set here.
 The user may modify options before launching new attacks without interrupting current attack, as long as the current attack window remains open.
+2.0 offers an advanced section
 
 > You may not comment out option lines but you may disable options if you decide on storing multiple possible options for testing.
 > This is done by e.g. #IFACE1\=
 
 Flexibility of ettercaps options have been preserved by allowing the user to change the options passed during execution.
+
+>2.0 Added user initiative modularization scripts. Now write your own modules in Bash or Python or Perl!
 
 > Ettercap default switches are -Tqz the user could simply change that value to -Tq if they wanted to enable initial arp.
 
@@ -30,7 +33,7 @@ Other monitor options are available by changing the MONITOR_MODE= option in n4p.
 
 ![AP](http://i.imgur.com/ORe3sma.png)
 
-Option 1 screen shot performing a recon scan. This changes into a Handshake WPA2 Attack by setting the values in n4p.conf then running option 3
+Option 1 screen shot performing a recon scan. This changes into a Handshake WPA2 Attack by setting the values in n4p.conf then running option 3 or manually calling modules in 2.0
 
 ![recon](http://i.imgur.com/jwHZMOK.png)
 
@@ -43,6 +46,8 @@ This folder is used by n4p internal attack communications. Such as capturing .ca
 n4p will not destroy this folder on exit so that the user may go back and store the files elsewhere for later analysis. Or for incorporating into pentesting reports.
 If you incur troubles launching applications via n4p, view the n4p log files!
 ![temp](http://i.imgur.com/t4JZKRP.png)
+
+> 2.0 adds cracking options of using hashcat now!!
 
 > The option for building the firewall must be ran last and each time you change attacks.
 

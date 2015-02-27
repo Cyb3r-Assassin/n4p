@@ -51,11 +51,23 @@ sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then bu
 
 if [[ $NetworkManager == "True" ]]; then #n4p cant operate airmon and such with network manager hogging everything. We must kill it.
     if [[ $OS == "Pentoo" ]]; then
-        get_RCstatus "NetworkManager"
-        [[ $STATUS == 'started' ]] && sudo /etc/init.d/NetworkManager stop
+        if [[ -f /etc/init.d/NetworkManager ]]; then
+            get_RCstatus "NetworkManager"
+            [[ $STATUS == 'started' ]] && sudo /etc/init.d/NetworkManager stop
+        else
+            echo "Error in Config file. NetworkManager does not appear to be present."
+        fi
     else
-        sudo service network-manager stop
-    fi
+        if [[ -f /etc/init.d/network-manager ]]; then
+            sudo service network-manager stop
+        fi
+   fi
+elif [[ $OS == "Pentoo" ]]; then
+        if [[ -e /etc/init.d/net.$IFACE1 ]]; then
+            echo "$INFO Getting status of $IFACE1"
+            get_RCstatus "net.$IFACE1"
+            [[ $STATUS == 'started' ]] && /etc/init.d/net.$IFACE1 stop
+        fi
 fi
 
 cut_choice() #This function parses the input commands in advanced mode for use with pre defined custom interactions
@@ -109,23 +121,18 @@ menu()
     elif [[ $CHOICE == 1 ]]; then
         sudo nano /etc/n4p/n4p.conf
     elif [[ $CHOICE == 2 ]]; then
-        get_name "IFACE1="; IFACE1=$USE
-        sudo xterm -bg black -fg blue -T "Recon" -geometry 90x20 -e ./modules/recon.sh &>/dev/null &
+        sudo xterm -bg black -fg blue -T "Recon" -geometry 90x20 -e ./modules/recon &>/dev/null &
     elif [[ $CHOICE == 3 ]]; then
-        get_name "IFACE1="; IFACE1=$USE
-        get_name "ATTACK="; ATTACK=$USE
         if [[ $ATTACK == "WPS" ]]; then
-            sudo xterm -bg black -fg blue -T "Wash" -geometry 90x20 -e ./modules/wash.sh &>/dev/null &
+            sudo xterm -bg black -fg blue -T "Wash" -geometry 90x20 -e ./modules/wash &>/dev/null &
         else
-            sudo xterm -bg black -fg blue -T "Dump cap" -geometry 90x20 -e ./modules/recon.sh &>/dev/null &
+            sudo xterm -bg black -fg blue -T "Dump cap" -geometry 90x20 -e ./modules/recon &>/dev/null &
         fi
     elif [[ $CHOICE == 4 ]]; then
-        get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
-        get_name "WORD_LIST="; WORD_LIST=$USE
         get_name "CRACK="; CRACK=$USE
         if [[ $CRACK == "Aircrack-ng" ]]; then
-            sudo xterm -hold -bg black -fg blue -T "Cracking" -geometry 90x20 -e ./modules/cracking.sh &>/dev/null &
-        else 
+            sudo xterm -hold -bg black -fg blue -T "Cracking" -geometry 90x20 -e ./modules/cracking &>/dev/null &
+        else
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # We need to update this to account for hashcat and wep!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -134,22 +141,21 @@ menu()
     elif [[ $CHOICE == 5 ]]; then
         get_name "ATTACK="; ATTACK=$USE
         if [[ $ATTACK == "Handshake" || $ATTACK == "Karma" || -z $ATTACK ]]; then
-            sudo xterm -bg black -fg blue -T "Airbase" -geometry 90x20 -e ./modules/airbase.sh &>/dev/null &
+            sudo xterm -bg black -fg blue -T "Airbase" -geometry 90x20 -e ./modules/airbase &>/dev/null &
         elif [[ $ATTACK == "WPS" ]]; then
-            sudo xterm -bg black -fg blue -T "Bully" -geometry 90x20 -e ./modules/recon.sh &>/dev/null &
+            sudo xterm -bg black -fg blue -T "Bully" -geometry 90x20 -e ./modules/recon &>/dev/null &
         elif [[ $ATTACK == "SslStrip" ]]; then
-        #   startairbase; fbridge; dhcp ######################################################################### We often use these function to set adapters here for dev reference
             echo -e "SSL Strip Log File\n" > ${sessionfolder}/ssl.log
             sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w ${sessionfolder}/ssl.log &>/dev/null &
         elif [[ $ATTACK == "WPE" ]]; then
-            sudo xterm -bg black -fg blue -T "WPE" -geometry 90x20 -e ./modules/wpe.sh  &>/dev/null &
+            sudo xterm -bg black -fg blue -T "WPE" -geometry 90x20 -e ./modules/wpe  &>/dev/null &
         elif [[ $ATTACK == "SslStrip" ]]; then
             get_name "IFACE1="; IFACE1=$USE
             get_name "ARP_VICTIM="; ARP_VICTIM=$USE
             sudo xterm -T "Arpspoof $IFACE1 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i $IFACE1 $ARP_VICTIM &>/dev/null &
         fi
     elif [[ $CHOICE == 6 ]]; then
-        sudo xterm -bg black -fg blue -T "iptables" -geometry 90x20 -e ./modules/n4p_iptables.sh &>/dev/null &
+        sudo xterm -bg black -fg blue -T "iptables" -geometry 90x20 -e ./modules/n4p_iptables &>/dev/null &
     elif [[ $CHOICE == 7 ]]; then
         get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
         get_name "STATION="; STATION=$USE
@@ -224,6 +230,7 @@ killemAll()
         menu
     else
         xhost -
+        sudo xterm -bg black -fg blue -T "Dump cap" -geometry 90x20 -e ./modules/rebuild_network &>/dev/null &
         echo "${BLD_TEA}$(cat ${DIR_LOGO}/zed.logo)${TXT_RST}"
         exit 0
     fi

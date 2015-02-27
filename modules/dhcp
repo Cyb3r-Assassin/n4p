@@ -32,6 +32,11 @@ get_state() # Retrieve the state of interfaces
     STATE=$(ip addr list | grep -i $1 | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2)
 }
 
+get_inet() # Retrieve the ip of the interface
+{
+    INET=$(ip addr list | grep -i $1 | grep -i inet | awk '{print $2}')
+}
+
 get_RCstatus() # What is the status from OpenRC of the service
 {
     STATUS=$(/etc/init.d/net.$1 status | sed 's/* status: //g' | cut -d ' ' -f 2)
@@ -42,9 +47,16 @@ depends()
     get_name "NetworkManager="; NetworkManager=$USE
     get_name "IFACE0="; IFACE0=$USE
     get_name "IFACE1="; IFACE1=$USE
-    get_name "BRIDGED="; BRIDGE_NAMED=$USE
+    get_name "AP="; UAP=$USE #This is what we name the AP via the config file
+    get_name "BRIDGED="; BRIDGED=$USE
     get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
     get_name "OS="; OS=$USE
+    IPT="/sbin/iptables"
+    AP="at0" #This is the device name as per "ip addr"
+    AP_GATEWAY=$(grep routers ${DIR_CONF}/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+    AP_SUBNET=$(grep netmask ${DIR_CONF}/dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
+    AP_IP=$(grep netmask ${DIR_CONF}/dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
+    AP_BROADCAST=$(grep broadcast-address ${DIR_CONF}/dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
     # Text color variables
     TXT_UND=$(tput sgr 0 1)          # Underline
     TXT_BLD=$(tput bold)             # Bold
@@ -61,37 +73,20 @@ depends()
     PASS="${BLD_TEA}[${TXT_RSR}${BLD_WHT} OK ${TXT_RST}${BLD_TEA}]${TXT_RST}"
     WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
     # Start text with $BLD_YEL variable and end the text with $TXT_RST
-rebuild_network()
-{
-    if [[ $BRIDGED == "True" ]]; then
-        get_RCstatus $BRIDGE_NAME
-        [[ $STATUS == 'started' ]] && /etc/init.d/net.$BRIDGE_NAME stop
-
-        get_state "$BRDIGE"
-        [[ $STATE != 'DOWN' ]] && ip link set $BRDIGE down
-
-        brctl delif "$BRIDGE_NAME $RESP_BR_1"
-        brctl delif "$BRIDGE_NAME $RESP_BR_2"
-        brctl delbr "$BRIDGE_NAME"
-        brctl show
-    fi
-        echo "$INFO It's now time to bring your default network interface back up"
-        if [[ $NetworkManager != "True" ]]; then
-            get_RCstatus "$IFACE0"
-            if [[ $STATUS != 'started' ]]; then
-                get_state "$IFACE0"
-                [[ $STATE == 'DOWN' ]] && ip link set $IFACE0 up
-                /etc/init.d/net.$IFACE0 start
-            fi
-        echo "$INFO The environment is now sanitized cya"
-       else
-            if [[ $OS == "Pentoo" ]]; then
-                get_RCstatus "$NetworkManager"
-                [[ $STATUS != 'started' ]] && /etc/init.d/NetworkManager start
-            else
-                service network-manager start
-            fi
-            echo "$INFO The environment is now sanitized cya"
-        fi
-    exit 0
 }
+
+
+#################################################################
+#################Verify our DHCP and bridge needs################
+#################################################################
+dhcp()
+{
+    if [[ -n $(grep -i Pentesters_AP ${DIR_CONF}/dhcpd.conf | awk '{print $2}') ]]; then
+        [[ $BRIDGED != 'True' ]] && /etc/init.d/dhcpd restart || /etc/init.d/net.$BRIDGE_NAME start
+    else # We apparently don't have the proper configuration file. Make the changes
+        cat /etc/n4p/dhcpd.conf >> /etc/dhcp/dhcpd.conf
+        dhcp
+    fi
+}
+depends
+fbridge
