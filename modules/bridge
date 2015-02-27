@@ -206,43 +206,5 @@ fbridge()
         echo "echo [$WARN] ERROR in n4p.conf configuration file, no Bridge found"
     fi
 }
-
-
-
-
-##################################################################
-########################Start the menu############################
-##################################################################
-menu()
-{   #This first if is mostly legacy and retained encase I do something with it in the future. I've yet to make use of it. Maybe you shouldh't expect me to
-    if [[ $UAP == "AIRBASE" ]]; then
-        MENUCHOICE=1
-    elif [[ $UAP == "HOSTAPD" ]]; then
-        MENUCHOICE=2
-    else
-        echo "${BLD_ORA}
-        +==================+
-        | 1) Airbase-NG    |
-        | 2) Hostapd       |
-        +==================+${TXT_RST}"
-        read -e -p "Option: " MENUCHOICE
-    fi
-
-    if [[ $MENUCHOICE == 1 ]]; then
-        get_name "ATTACK="; ATTACK=$USE
-        if [[ $ATTACK == "Handshake" || $ATTACK == "Karma" || -z $ATTACK]]; then
-            startairbase; keepalive
-            [[ -z $ATTACK ]] && dhcp
-        elif [[ $BRIDGE == "True" ]]; then
-            fbridge; dhcp
-        else
-            echo "Bad attack method specified for this option."
-        fi
-    elif [[ MENUCHOICE == 2 ]]; then
-        echo "Option Available tomarrow"
-    else 
-        clear; echo "$WARN Invalid option"; menu
-    fi
-}
 depends
 settings

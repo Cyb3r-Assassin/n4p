@@ -1,3 +1,35 @@
+1.4
+upstraem aircrack changes fully addressed.
+
+hostapd working for WPE attacks
+
+Fixed very broken logic that had evolved in intiation processes in n4p_main.sh
+
+Made changes to the ebuild.
+
+Changed the logic of assigned processes to the at0 interface to relate only to an as needed task.
+
+adjust SslStrip call process that allows it to be initiated individually without having to be built from an AP initiation with pre selected attack.
+
+Modulerized existing N4P scripts
+
+Broke out n4p_main.sh into segrigated scripts based on functions
+
+Creatied module for Access Point creations
+
+created the module for controlling bridge functions
+
+created the module for DHCP functions
+
+Fixed the code for adapter bridging (it's been broken for a while)
+
+Added Hashcat functionality for cracking
+
+Added .cap to hccap conversions
+
+Added advanced user mode with shell interaction
+
+
 1.3
 Aircrack suit has made changes upstream that break n4p on live git builds of aircrack. This is marginally fixed here but still some bugs. Working on full comparability still.
 
