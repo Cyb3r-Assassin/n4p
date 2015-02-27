@@ -1,7 +1,7 @@
 ##N4P for Pentoo and Gentoo Linux.
 ####Offensive network security framework
 
-####This git stream is considered a live and unstable form. All stable entries are committed into a release package.
+####This git stream is considered a live and unstable build. All stable entries are committed into a release package.
 
 * Fully manages system states automatically for Airbase-ng with bridging and ipv4_forwarding ability.
 * Configures all necessary elements and performs MITM, ARP, WPA Cracking, Sniffing and SSLstrip attacks.
