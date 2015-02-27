@@ -45,6 +45,7 @@ depends()
     get_name "BRIDGED="; BRIDGE_NAMED=$USE
     get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
     get_name "OS="; OS=$USE
+    MON="${IFACE1}mon"
     # Text color variables
     TXT_UND=$(tput sgr 0 1)          # Underline
     TXT_BLD=$(tput bold)             # Bold
@@ -63,6 +64,8 @@ depends()
     # Start text with $BLD_YEL variable and end the text with $TXT_RST
 rebuild_network()
 {
+    if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
+
     if [[ $BRIDGED == "True" ]]; then
         get_RCstatus $BRIDGE_NAME
         [[ $STATUS == 'started' ]] && /etc/init.d/net.$BRIDGE_NAME stop
@@ -75,23 +78,24 @@ rebuild_network()
         brctl delbr "$BRIDGE_NAME"
         brctl show
     fi
-        echo "$INFO It's now time to bring your default network interface back up"
-        if [[ $NetworkManager != "True" ]]; then
-            get_RCstatus "$IFACE0"
-            if [[ $STATUS != 'started' ]]; then
-                get_state "$IFACE0"
-                [[ $STATE == 'DOWN' ]] && ip link set $IFACE0 up
-                /etc/init.d/net.$IFACE0 start
-            fi
-        echo "$INFO The environment is now sanitized cya"
-       else
-            if [[ $OS == "Pentoo" ]]; then
-                get_RCstatus "$NetworkManager"
-                [[ $STATUS != 'started' ]] && /etc/init.d/NetworkManager start
-            else
-                service network-manager start
-            fi
-            echo "$INFO The environment is now sanitized cya"
+    
+    echo "$INFO It's now time to bring your default network interface back up"
+    if [[ $NetworkManager != "True" ]]; then
+        get_RCstatus "$IFACE0"
+        if [[ $STATUS != 'started' ]]; then
+            get_state "$IFACE0"
+            [[ $STATE == 'DOWN' ]] && ip link set $IFACE0 up
+            /etc/init.d/net.$IFACE0 start
         fi
+        echo "$INFO The environment is now sanitized cya"
+   else
+        if [[ $OS == "Pentoo" ]]; then
+            get_RCstatus "$NetworkManager"
+            [[ $STATUS != 'started' ]] && /etc/init.d/NetworkManager start
+        else
+            service network-manager start
+        fi
+            echo "$INFO The environment is now sanitized cya"
+    fi
     exit 0
 }

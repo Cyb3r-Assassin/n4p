@@ -23,8 +23,8 @@ DIR_LOGO=/usr/share/n4p
 # Building a sane working environment #
 #######################################
 
-sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
-[ ! -d "$sessionfolder" ] && mkdir "$sessionfolder"; mkdir -p "$sessionfolder" "${sessionfolder}/logs"
+SESSIONFOLDER=/tmp/n4p # Set our tmp working configuration directory and then build config files
+[ ! -d "$SESSIONFOLDER" ] && mkdir "$SESSIONFOLDER"; mkdir -p "$SESSIONFOLDER" "${SESSIONFOLDER}/logs"
 
 
 get_name() # Retrieve the config values
@@ -47,8 +47,13 @@ get_RCstatus() # What is the status from OpenRC of the service
     STATUS=$(/etc/init.d/net.$1 status | sed 's/* status: //g' | cut -d ' ' -f 2)
 }
 
+if [[ -z $(grep MY_CUSTOM_VARIABLE= ${DIRCONF}/n4p.conf) ]]; then #User module custom variable does not exist yet in our config. Add it now
+    echo "MY_CUSTOM_VARIABLE=DefaultValue" >> ${DIRCONF}/n4p.conf
+fi
+
 depends()
 {
+    get_name "MY_CUSTOM_VARIABLE="; MY_CUSTOM_VARIABLE=$USE
     get_name "NetworkManager="; NetworkManager=$USE
     get_name "IFACE0="; IFACE0=$USE
     get_name "IFACE1="; IFACE1=$USE
@@ -93,4 +98,4 @@ depends()
     # Start text with $BLD_YEL variable and end the text with $TXT_RST
 }
 
-echo "Hello World."
+echo "My custom module!!!!!"

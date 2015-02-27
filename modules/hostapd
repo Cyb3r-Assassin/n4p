@@ -22,7 +22,6 @@ DIR_CONF=/etc/n4p
 # Building a sane working environment #
 #######################################
 
-
 get_name() # Retrieve the config values
 {
     USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
@@ -30,7 +29,7 @@ get_name() # Retrieve the config values
 
 depends()
 {
-    get_name "WPE_CONFIG="; WPE_CONFIG=$USE
+    get_name "HOSTAPD_CONFIG="; HOSTAPD_CONFIG=$USE
 }
-
-hostapd $WPE_CONFIG
+depends
+hostapd $HOSTAPD_CONFIG

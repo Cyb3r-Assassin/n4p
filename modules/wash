@@ -37,8 +37,6 @@ WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
 echo "${BLD_TEA}$(cat ${DIR_LOGO}/wash.logo)${TXT_RST}"; sleep 2.5
 
-if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
-
 [[ -n $(rfkill list | grep yes) ]] && rfkill unblock wlan
 
 do_it()

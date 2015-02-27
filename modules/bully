@@ -12,7 +12,6 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
     [[ $SOURCE != /* ]] && SOURCE="${DIR}/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-sessionfolder=/tmp/n4p
 DIR_CONF=/etc/n4p
 DIR_LOGO=/usr/share/n4p
 
@@ -37,18 +36,15 @@ BLD_RED=${txtbld}$(tput setaf 1) # red
 TXT_RST=$(tput sgr0)             # Reset
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
-
-if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
 [[ -n $(rfkill list | grep yes) ]] && rfkill unblock wlan
 
 do_it()
 {
     if [[ -z $(ip addr | grep -i "$MON") ]]; then
         iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
-        airmon-zc start $IFACE1
+        [[ -z $(ip addr | grep -i "${MON}") ]] && airmon-zc start $IFACE1
     fi
-        xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e bully -b $VICTIM_BSSID -c $CHAN -B $MON &>/dev/null &
-
+    xterm -hold -bg black -fg blue -T "Bully" -geometry 90x20 -e bully -b $VICTIM_BSSID -c $CHAN -B $MON &>/dev/null &
     keepalive
 }
 

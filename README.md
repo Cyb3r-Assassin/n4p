@@ -1,22 +1,26 @@
 ##N4P for Pentoo and Gentoo Linux.
 ####Offensive network security framework
 
+####This git stream is considered a live and unstable form. All stable entries are committed into a release package.
+
 * Fully manages system states automatically for Airbase-ng with bridging and ipv4_forwarding ability.
 * Configures all necessary elements and performs MITM, ARP, WPA Cracking, Sniffing and SSLstrip attacks.
 
+#### 2.0 Added user initiative modularization scripts. Now write your own modules in Bash or Python or Perl!
+#### 2.0 Wireless operations now support Debian and Kali linux!
+
 Opening screenshot of n4p
 ![n4p](http://i.imgur.com/RGdtLR8.png)
+#### 2.0 offers an advanced section
 
 Configuration file modified by user. All Access Point options, devices, and attacking methods are set here.
 The user may modify options before launching new attacks without interrupting current attack, as long as the current attack window remains open.
-2.0 offers an advanced section
+
 
 > You may not comment out option lines but you may disable options if you decide on storing multiple possible options for testing.
 > This is done by e.g. #IFACE1\=
 
 Flexibility of ettercaps options have been preserved by allowing the user to change the options passed during execution.
-
->2.0 Added user initiative modularization scripts. Now write your own modules in Bash or Python or Perl!
 
 > Ettercap default switches are -Tqz the user could simply change that value to -Tq if they wanted to enable initial arp.
 
@@ -47,7 +51,7 @@ n4p will not destroy this folder on exit so that the user may go back and store 
 If you incur troubles launching applications via n4p, view the n4p log files!
 ![temp](http://i.imgur.com/t4JZKRP.png)
 
-> 2.0 adds cracking options of using hashcat now!!
+#### 2.0 adds cracking options of using hashcat now!!
 
 > The option for building the firewall must be ran last and each time you change attacks.
 
@@ -71,16 +75,26 @@ https://www.youtube.com/watch?v=1Vt6D_XGJTQ
 
 **Known Limitations**
 
-n4p can not use any wireless adapters that are currently loaned to Network Manager.
+Some advanced network interface operations such as bridging interfaces only works in system running Gentoo's OpenRC init system
+
+##WARNING!! Read the config file from option 1 in n4p VERY carefully making sure it is fully applicable to your environment before doing anything else!!
+
+##For Debian Kali users only!
+You need to install n4p manually in this exact directy structure.
+/usr/lib64/n4p/
+        n4p.sh modules
+/usr/lib64/n4p/modules/
+      All files in the modules folder here
+
+Create a sym link
+        ln -s /usr/lib64/n4p/n4p.sh /usr/bin/n4p
+
+        /usr/share/n4p
+                auth.logo die.logo dump.logo firewall.logo monitor.logo opening.logo recon.logo zed.logo wash.logo
+
+        /etc/n4p
+            dhcpd.conf n4p.conf
 
 **BUGS**
 
-Report all bugs to Cyb3r-Assassin directly through git contacts or irc.freenode. My Public key is also distributed here on github.
-
-**Why is n4p only for Pentoo and Gentoo?**
-
-Because I'm a sane pentester
-
-**What if I want to use n4p on a different distribution?**
-
-Than write a patch
+Report all bugs to Cyb3r-Assassin directly through git contacts or irc.freenode #hackallthethings.

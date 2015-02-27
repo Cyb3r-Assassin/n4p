@@ -46,8 +46,8 @@ MON="${IFACE1}mon"
 FAILSAFE="th8934pjghwt74ygp"
 echo "${BLD_TEA}$(cat ${DIR_LOGO}/opening.logo)${TXT_RST}"; sleep 1
 
-sessionfolder=/tmp/n4p # Set our tmp working configuration directory and then build config files
-[ ! -d "$sessionfolder" ] && mkdir "$sessionfolder"; mkdir -p "$sessionfolder" "${sessionfolder}/logs"
+SESSIONFOLDER=/tmp/n4p # Set our tmp working configuration directory and then build config files
+[ ! -d "$SESSIONFOLDER" ] && mkdir "$SESSIONFOLDER"; mkdir -p "$SESSIONFOLDER" "${SESSIONFOLDER}/logs"
 
 if [[ $NetworkManager == "True" ]]; then #n4p cant operate airmon and such with network manager hogging everything. We must kill it.
     if [[ $OS == "Pentoo" ]]; then
@@ -126,16 +126,19 @@ menu()
         if [[ $ATTACK == "WPS" ]]; then
             sudo xterm -bg black -fg blue -T "Wash" -geometry 90x20 -e ./modules/wash &>/dev/null &
         else
-            sudo xterm -bg black -fg blue -T "Dump cap" -geometry 90x20 -e ./modules/recon &>/dev/null &
+            sudo xterm -bg black -fg blue -T "Dump cap" -geometry 90x20 -e ./modules/dump &>/dev/null &
         fi
     elif [[ $CHOICE == 4 ]]; then
         get_name "CRACK="; CRACK=$USE
         if [[ $CRACK == "Aircrack-ng" ]]; then
+            get_name "ATTACK="; ATTACK=$USE
+            if [[ $ATTACK == "WEP" ]]; then
+                get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
+                sudo xterm -T "WEP CRACK ${VICTIM_BSSID}" -geometry 90x15 -e aircrack-ng ${SESSIONFOLDER}/${VICTIM_BSSID}-01.cap &>/dev/null &
+            fi
+        elif [[ $CRACK == "Hashcat" ]]; then
             sudo xterm -hold -bg black -fg blue -T "Cracking" -geometry 90x20 -e ./modules/cracking &>/dev/null &
         else
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # We need to update this to account for hashcat and wep!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             echo "CRACK= configuration error, check config file"
         fi
     elif [[ $CHOICE == 5 ]]; then
@@ -145,8 +148,8 @@ menu()
         elif [[ $ATTACK == "WPS" ]]; then
             sudo xterm -bg black -fg blue -T "Bully" -geometry 90x20 -e ./modules/recon &>/dev/null &
         elif [[ $ATTACK == "SslStrip" ]]; then
-            echo -e "SSL Strip Log File\n" > ${sessionfolder}/ssl.log
-            sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w ${sessionfolder}/ssl.log &>/dev/null &
+            echo -e "SSL Strip Log File\n" > ${SESSIONFOLDER}/ssl.log
+            sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w ${SESSIONFOLDER}/ssl.log &>/dev/null &
         elif [[ $ATTACK == "WPE" ]]; then
             sudo xterm -bg black -fg blue -T "WPE" -geometry 90x20 -e ./modules/wpe  &>/dev/null &
         elif [[ $ATTACK == "SslStrip" ]]; then
@@ -166,14 +169,14 @@ menu()
         get_name "BRIDGE_NAME="; BR_NAME=$USE
         get_name "AP="; AP_NAME=$USE
         get_name "BRIDGED="; BRIDGED=$USE
-        [[ ! -f ${sessionfolder}/recovered_passwords.pcap ]] && sudo touch ${sessionfolder}/recovered_passwords.pcap
+        [[ ! -f ${SESSIONFOLDER}/recovered_passwords.pcap ]] && sudo touch ${SESSIONFOLDER}/recovered_passwords.pcap
         get_name "ETTERCAP_OPTIONS="; ETTERCAP_OPTIONS=$USE
         if [[ $BRIDGED == "True" ]]; then
             sudo xterm -T "ettercap $BR_NAME" -geometry 90x20 -e ettercap ${ETTERCAP_OPTIONS} -i ${BR_NAME} &>/dev/null &
         elif [[ $AP_NAME == "AIRBASE" ]]; then
-            sudo xterm -T "ettercap at0" -geometry 90x20 -e ettercap -i at0 ${ETTERCAP_OPTIONS} -w ${sessionfolder}/recovered_passwords.pcap &>/dev/null &
+            sudo xterm -T "ettercap at0" -geometry 90x20 -e ettercap -i at0 ${ETTERCAP_OPTIONS} -w ${SESSIONFOLDER}/recovered_passwords.pcap &>/dev/null &
         #elif [[ $AP_NAME == "HOSTAPD" ]]; then
-        #   sudo xterm -T "ettercap $IFACE1" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w ${sessionfolder}/recovered_passwords.pcap &>/dev/null &
+        #   sudo xterm -T "ettercap $IFACE1" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w ${SESSIONFOLDER}/recovered_passwords.pcap &>/dev/null &
         fi
     else
         ###########################################################################################################################
@@ -217,6 +220,7 @@ menu()
             fi
         else
             echo "${BLD_TEA}I'm confused.${TXT_RST}"
+            echo "${BLD_TEA}Why not try Advanced mode!${TXT_RST}"
         fi
     fi
     menu
