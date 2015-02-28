@@ -81,12 +81,14 @@ Some advanced network interface operations such as bridging interfaces only work
 
 ##For Debian Kali users only!
 You need to install n4p manually in this exact directy structure.
-/usr/lib64/n4p/
+
+    /usr/lib64/n4p/
         n4p.sh modules
-/usr/lib64/n4p/modules/
+    /usr/lib64/n4p/modules/
       All files in the modules folder here
 
 Create a sym link
+
         ln -s /usr/lib64/n4p/n4p.sh /usr/bin/n4p
 
         /usr/share/n4p
