@@ -46,7 +46,6 @@ get_RCstatus() # What is the status from OpenRC of the service
 
 depends()
 {
-    get_name "NetworkManager="; NetworkManager=$USE
     get_name "OS="; OS=$USE
     get_name "IFACE0="; IFACE0=$USE
     get_name "IFACE1="; IFACE1=$USE

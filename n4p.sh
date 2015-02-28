@@ -39,7 +39,7 @@ EYES=$(tput setaf 6)
 AP_GATEWAY=$(grep routers ${DIR_CONF}/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
 get_name "IFACE1="; IFACE1=$USE
 get_name "OS="; OS=$USE
-get_name "NetworkManager="; NetworkManager=$USE
+get_name "NETWORKMANAGER="; NETWORKMANAGER=$USE
 get_name "OS="; OS=$USE
 get_name "INTERFACE="; INTERFACE=$USE
 MON="${IFACE1}mon"
@@ -49,7 +49,7 @@ echo "${BLD_TEA}$(cat ${DIR_LOGO}/opening.logo)${TXT_RST}"; sleep 1
 SESSIONFOLDER=/tmp/n4p # Set our tmp working configuration directory and then build config files
 [ ! -d "$SESSIONFOLDER" ] && mkdir "$SESSIONFOLDER"; mkdir -p "$SESSIONFOLDER" "${SESSIONFOLDER}/logs"
 
-if [[ $NetworkManager == "True" ]]; then #n4p cant operate airmon and such with network manager hogging everything. We must kill it.
+if [[ $NETWORKMANAGER == "True" ]]; then #n4p cant operate airmon and such with network manager hogging everything. We must kill it.
     if [[ $OS == "Pentoo" ]]; then
         if [[ -f /etc/init.d/NetworkManager ]]; then
             get_RCstatus "NetworkManager"
@@ -69,6 +69,8 @@ elif [[ $OS == "Pentoo" ]]; then
             [[ $STATUS == 'started' ]] && /etc/init.d/net.$IFACE1 stop
         fi
 fi
+
+trap killemAll INT HUP;
 
 cut_choice() #This function parses the input commands in advanced mode for use with pre defined custom interactions
 {
@@ -151,7 +153,7 @@ menu()
             echo -e "SSL Strip Log File\n" > ${SESSIONFOLDER}/ssl.log
             sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w ${SESSIONFOLDER}/ssl.log &>/dev/null &
         elif [[ $ATTACK == "WPE" ]]; then
-            sudo xterm -bg black -fg blue -T "WPE" -geometry 90x20 -e ./modules/wpe  &>/dev/null &
+            sudo xterm -bgmodules/rebuild_network black -fg blue -T "WPE" -geometry 90x20 -e ./modules/wpe  &>/dev/null &
         elif [[ $ATTACK == "SslStrip" ]]; then
             get_name "IFACE1="; IFACE1=$USE
             get_name "ARP_VICTIM="; ARP_VICTIM=$USE
@@ -233,12 +235,10 @@ killemAll()
         clear
         menu
     else
+        sudo ./modules/rebuild_network
         xhost -
-        sudo xterm -bg black -fg blue -T "Dump cap" -geometry 90x20 -e ./modules/rebuild_network &>/dev/null &
         echo "${BLD_TEA}$(cat ${DIR_LOGO}/zed.logo)${TXT_RST}"
         exit 0
     fi
 }
-
-trap killemAll INT HUP;
 menu

@@ -54,7 +54,6 @@ fi
 depends()
 {
     get_name "MY_CUSTOM_VARIABLE="; MY_CUSTOM_VARIABLE=$USE
-    get_name "NetworkManager="; NetworkManager=$USE
     get_name "IFACE0="; IFACE0=$USE
     get_name "IFACE1="; IFACE1=$USE
     get_name "ESSID="; ESSID=$USE

@@ -17,7 +17,6 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 DIR_CONF=/etc/n4p
-DIR_LOGO=/usr/share/n4p
 
 #######################################
 # Building a sane working environment #
@@ -39,7 +38,7 @@ get_RCstatus() # What is the status from OpenRC of the service
 
 depends()
 {
-    get_name "NetworkManager="; NetworkManager=$USE
+    get_name "NETWORKMANAGER="; NETWORKMANAGER=$USE
     get_name "IFACE0="; IFACE0=$USE
     get_name "IFACE1="; IFACE1=$USE
     get_name "BRIDGED="; BRIDGE_NAMED=$USE
@@ -62,7 +61,8 @@ depends()
     PASS="${BLD_TEA}[${TXT_RSR}${BLD_WHT} OK ${TXT_RST}${BLD_TEA}]${TXT_RST}"
     WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
     # Start text with $BLD_YEL variable and end the text with $TXT_RST
-rebuild_network()
+}
+    rebuild_network()
 {
     if [[ -n $(ip addr | grep -i "$MON") ]]; then echo "$WARN Leftover scoobie snacks found! nom nom"; airmon-zc stop $MON; fi
 
@@ -78,24 +78,26 @@ rebuild_network()
         brctl delbr "$BRIDGE_NAME"
         brctl show
     fi
-    
+
     echo "$INFO It's now time to bring your default network interface back up"
-    if [[ $NetworkManager != "True" ]]; then
+    if [[ $NETWORKMANAGER != "True" ]]; then
         get_RCstatus "$IFACE0"
         if [[ $STATUS != 'started' ]]; then
             get_state "$IFACE0"
             [[ $STATE == 'DOWN' ]] && ip link set $IFACE0 up
             /etc/init.d/net.$IFACE0 start
         fi
-        echo "$INFO The environment is now sanitized cya"
-   else
+        echo -e "\n$INFO The environment is now sanitized cya"
+    else
         if [[ $OS == "Pentoo" ]]; then
-            get_RCstatus "$NetworkManager"
+            STATUS=$(/etc/init.d/NetworkManager status | sed 's/* status: //g' | cut -d ' ' -f 2)
             [[ $STATUS != 'started' ]] && /etc/init.d/NetworkManager start
         else
             service network-manager start
         fi
-            echo "$INFO The environment is now sanitized cya"
+            echo -e "\n$INFO The environment is now sanitized cya"
     fi
     exit 0
 }
+depends
+rebuild_network
