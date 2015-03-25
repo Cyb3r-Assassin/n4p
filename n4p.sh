@@ -153,7 +153,7 @@ menu()
             echo -e "SSL Strip Log File\n" > ${SESSIONFOLDER}/ssl.log
             sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w ${SESSIONFOLDER}/ssl.log &>/dev/null &
         elif [[ $ATTACK == "WPE" ]]; then
-            sudo xterm -bgmodules/rebuild_network black -fg blue -T "WPE" -geometry 90x20 -e ./modules/wpe  &>/dev/null &
+            sudo xterm -bg black -fg blue -T "WPE" -geometry 90x20 -e ./modules/wpe  &>/dev/null &
         elif [[ $ATTACK == "SslStrip" ]]; then
             get_name "IFACE1="; IFACE1=$USE
             get_name "ARP_VICTIM="; ARP_VICTIM=$USE
@@ -194,15 +194,15 @@ menu()
                     run=$CHOICE
                 fi
             elif [[ $CHOICE == "run" ]]; then
-                if [[ -n $CHOICE ]]; then # Check if the CHOICE is empty before trying to exacute
+                if [[ -n $CHOICE ]]; then # Check if the CHOICE is empty before trying to execute
                     sudo xterm -hold -bg black -fg blue -T "N4P Advanced runtime" -geometry 65x15 -e ./modules/$run &>/dev/null &
                     #sudo ./modules/$CHOICE
                 else
                     echo "${BLD_TEA}Nothing to do!${TXT_RST}"
                 fi
             elif [[ $CHOICE == "show options" ]]; then
-              if [[ -n $run ]]; then # Check if the CHOICE is empty before trying to exacute
-                  cat modules/$run | grep get_name\ \" | cut -d '"' -f 2
+              if [[ -n $run ]]; then # Check if the CHOICE is empty before trying to execute
+                  grep get_name\ \" modules/$run | cut -d '"' -f 2
               else
                   echo "${BLD_TEA}Nothing to do!${TXT_RST}"
               fi
