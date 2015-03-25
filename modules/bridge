@@ -99,6 +99,13 @@ openrc_bridge()
     fi
 
     # This insures $RESP_BR_1 & RESP_BR_2 does not have an ip and then removes it if it does since the bridge handles this
+    # setting ip and route doesn't always take, lets ensure it sticks and check no other routes or ip's are getting assigned not by us then remove them if so.
+    local CHK_GATEWAY=$(ip addr | grep $AP | grep -i inet | awk -Finet '{print $2}' | awk -F brd '{print $1}' | cut -d ' ' -f 2)
+    [[ -n $CHK_GATEWAY && $CHK_GATEWAY != "${AP_GATEWAY}/32" ]] && ip addr del $CHK_IP dev $AP
+
+    local CHK_IP=$(ip route | grep $AP | awk -Fvia '{print $1}' | cut -d ' ' -f 1)
+    [[ -n $CHK_IP && $CHK_IP != "${AP_IP}/24" ]] && ip route flush $CHK_IP
+    
     get_inet "$RESP_BR_1"
     [[ -n $INET ]] && ip addr del $CHK_IP dev $RESP_BR_1
 
@@ -137,12 +144,20 @@ fbridge()
 {
     if [[ $BRIDGED == "True" ]]; then
         RESP_BR_1=$IFACE0
-        raed -p "Am I to bridge interface $AP or $IFACE1 ?" AIRBASE
+        read -p "Am I to bridge interface $AP or $IFACE1 ? " AIRBASE
         [[ $AIRBASE == "$AP" ]] && RESP_BR_2=$AP || RESP_BR_2=$IFACE1
         openrc_bridge
     elif [[ $BRIDGED != "False" ]]; then
         echo "echo [$WARN] ERROR in n4p.conf configuration file, no Bridge found"
+    else
+        echo "Bridging is disabled in n4p config file"
     fi
+}
+close()
+{
+    read -p "Press Enter to exit" stuff
+    exit 0
 }
 depends
 fbridge
+close
