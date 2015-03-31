@@ -27,6 +27,7 @@ SESSIONFOLDER=/tmp/n4p # Set our tmp working configuration directory and then bu
 [ ! -d "$SESSIONFOLDER" ] && mkdir "$SESSIONFOLDER"; mkdir -p "$SESSIONFOLDER" "${SESSIONFOLDER}/logs"
 
 
+#Use these functions to retrieve properties
 get_name() # Retrieve the config values
 {
     USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
@@ -47,8 +48,12 @@ get_RCstatus() # What is the status from OpenRC of the service
     STATUS=$(/etc/init.d/net.$1 status | sed 's/* status: //g' | cut -d ' ' -f 2)
 }
 
+# This statement will allow you to add your custom variables for each of your modules and appened them into the config file for the user on firt run
 if [[ -z $(grep MY_CUSTOM_VARIABLE= ${DIRCONF}/n4p.conf) ]]; then #User module custom variable does not exist yet in our config. Add it now
     echo "MY_CUSTOM_VARIABLE=DefaultValue" >> ${DIRCONF}/n4p.conf
+    echo "Please adjust all needed variables in the n4p.conf file and then run this module again."
+    sleep 6
+    exit 0
 fi
 
 depends()
@@ -70,7 +75,7 @@ depends()
     get_name "TYPE="; TYPE=$USE
     get_name "ENCRYPTION="; ENCRYPTION=$USE
     get_name "MONITOR_MODE="; MONITOR_MODE=$USE
-    IPT="/sbin/iptables"
+    #examples of values you may use
     AP="at0" #This is the device name as per "ip addr"
     MON="${IFACE1}mon"
     VPN="tun0"

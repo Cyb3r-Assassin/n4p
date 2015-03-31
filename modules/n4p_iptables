@@ -34,6 +34,7 @@ get_name "BRIDGED="; BRIDGED=$USE
 get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
 get_name "ATTACK="; ATTACK=$USE
 get_name "USE_VPN="; USE_VPN=$USE
+get_name "VPN_NAME="; VPN_NAME=$USE
 # Text color variables
 TXT_BLD=$(tput bold)             # Bold
 BLD_PUR=${txtbld}$(tput setaf 5) # purple
@@ -80,7 +81,8 @@ fw_start()
     if [[ $USE_VPN == True ]]; then
         $IPT -A allowed-connection -i $VPN -j ACCEPT
         $IPT -A allowed-connection -i $VPNI -j ACCEPT
-        /etc/init.d/openvpn start
+        $VPN_NAME=.${VPN_NAME}
+        /etc/init.d/openvpn${VPN_NAME} start
     fi
     $IPT -A allowed-connection -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
     $IPT -A allowed-connection -m conntrack --ctstate INVALID -j DROP
@@ -126,7 +128,7 @@ fw_start()
     $IPT -A allow-samba-traffic-in -p udp -m multiport --dports 445,135,136,137,138,139 -m conntrack --ctstate NEW -j ACCEPT
 
     #advanced Libvirt KVM/QEMU Virtual machine rules
-   ## $IPT -A POSTROUTING -t nat -s 10.0.0.0/8 -o "$IFACE0" -j MASQUERADE
+    #$IPT -A POSTROUTING -t nat -s 10.0.0.0/8 -o "$IFACE0" -j MASQUERADE
     #$IPT -A POSTROUTING -t nat --out-interface $IFACE0 -j MASQUERADE
     #$IPT -A allowed-connection -i virbr0 -o $IFACE0 -j ACCEPT
     #$IPT -A allowed-connection -i $IFACE0 -o virbr0 -j ACCEPT

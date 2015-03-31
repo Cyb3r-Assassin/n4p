@@ -47,9 +47,7 @@ depends()
     get_name "IFACE0="; IFACE0=$USE
     get_name "IFACE1="; IFACE1=$USE
     get_name "AP="; UAP=$USE #This is what we name the AP via the config file
-    get_name "BRIDGED="; BRIDGED=$USE
-    get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
-    get_name "OS="; OS=$USE
+    get_name "BRIDGED="; BRIDGED=$USEget_name "OS="; OS=$USE
     IPT="/sbin/iptables"
     AP="at0" #This is the device name as per "ip addr"
     AP_GATEWAY=$(grep routers ${DIR_CONF}/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
@@ -105,7 +103,7 @@ openrc_bridge()
 
     local CHK_IP=$(ip route | grep $AP | awk -Fvia '{print $1}' | cut -d ' ' -f 1)
     [[ -n $CHK_IP && $CHK_IP != "${AP_IP}/24" ]] && ip route flush $CHK_IP
-    
+
     get_inet "$RESP_BR_1"
     [[ -n $INET ]] && ip addr del $CHK_IP dev $RESP_BR_1
 
@@ -138,19 +136,21 @@ openrc_bridge()
     ip link set $BRIDGE_NAME up
     sleep 0.3
     ./dhcp
+    sleep 4
 }
 
 fbridge()
 {
     if [[ $BRIDGED == "True" ]]; then
         RESP_BR_1=$IFACE0
-        read -p "Am I to bridge interface $AP or $IFACE1 ? " AIRBASE
-        [[ $AIRBASE == "$AP" ]] && RESP_BR_2=$AP || RESP_BR_2=$IFACE1
+        read -p "Am I to bridge interface $AP or $IFACE1 ? " THE_BRIDGE
+        [[ $THE_BRIDGE == "$AP" ]] && RESP_BR_2=$AP || RESP_BR_2=$IFACE1
         openrc_bridge
     elif [[ $BRIDGED != "False" ]]; then
         echo "echo [$WARN] ERROR in n4p.conf configuration file, no Bridge found"
     else
         echo "Bridging is disabled in n4p config file"
+        sleep 3
     fi
 }
 close()
