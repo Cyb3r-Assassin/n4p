@@ -91,7 +91,7 @@ depends()
     else
         if [[ $OS == "Pentoo" ]]; then
             STATUS=$(/etc/init.d/NetworkManager status | sed 's/* status: //g' | cut -d ' ' -f 2)
-            [[ $STATUS != 'started' ]] && /etc/init.d/NetworkManager start
+            [[ $STATUS != 'started' || $STATUS == 'inactive' ]] && /etc/init.d/NetworkManager start
         else
             service network-manager start
         fi
