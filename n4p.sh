@@ -53,7 +53,7 @@ if [[ $NETWORKMANAGER == "True" ]]; then #n4p cant operate airmon and such with 
     if [[ $OS == "Pentoo" ]]; then
         if [[ -f /etc/init.d/NetworkManager ]]; then
             get_RCstatus "NetworkManager"
-            [[ $STATUS == 'started' ]] && sudo /etc/init.d/NetworkManager stop
+            [[ $STATUS == 'started' || $STATUS == 'inactive' ]] && sudo /etc/init.d/NetworkManager stop
         else
             echo "Error in Config file. NetworkManager does not appear to be present."
         fi
@@ -66,7 +66,7 @@ elif [[ $OS == "Pentoo" ]]; then
         if [[ -e /etc/init.d/net.$IFACE1 ]]; then
             echo "$INFO Getting status of $IFACE1"
             get_RCstatus "net.$IFACE1"
-            [[ $STATUS == 'started' ]] && /etc/init.d/net.$IFACE1 stop
+            [[ $STATUS == 'started' || $STATUS == 'inactive' ]] && /etc/init.d/net.$IFACE1 stop
         fi
 fi
 
