@@ -1,3 +1,14 @@
+2.0.2 Defcon Build
+
+Ebuild Updates
+
+N4P config file setup with default values for Pentoo ISO
+
+Changed the naming of <n4p_iptables> to <firewall> to better suit the modularized design.
+
+Allow run as root
+
+
 2.0.1
 Fixed a bad if nest in dump
 tweak some things in recon
@@ -6,8 +17,6 @@ tweak some things in recon
 Upstraem aircrack changes addressed via ebuild, Gentoo/Pentoo only.
 
 Hostapd working for WPE attacks
-
-Hostapd added as accesspoint option
 
 Fixed very broken logic that had evolved in intiation processes in n4p_main.sh
 

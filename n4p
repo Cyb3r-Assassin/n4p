@@ -1,11 +1,6 @@
 
 #!/bin/bash
-if [[ $(id -u) != 0 ]]; then # Verify we are not root
-	xhost +
-else
-   echo "This script can not be ran as root or with sudo." 1>&2
-   exit 1
-fi
+xhost +
 
 #retrieve absolute path structures so we can use symlinks and config files
 SOURCE="${BASH_SOURCE[0]}"
@@ -50,23 +45,22 @@ SESSIONFOLDER=/tmp/n4p # Set our tmp working configuration directory and then bu
 [ ! -d "$SESSIONFOLDER" ] && mkdir "$SESSIONFOLDER"; mkdir -p "$SESSIONFOLDER" "${SESSIONFOLDER}/logs"
 
 if [[ $NETWORKMANAGER == "True" ]]; then #n4p cant operate airmon and such with network manager hogging everything. We must kill it.
-    if [[ $OS == "Pentoo" ]]; then
-        if [[ -f /etc/init.d/NetworkManager ]]; then
-            get_RCstatus "NetworkManager"
-            [[ $STATUS == 'started' || $STATUS == 'inactive' ]] && sudo /etc/init.d/NetworkManager stop
-        else
-            echo "Error in Config file. NetworkManager does not appear to be present."
-        fi
-    else
-        if [[ -f /etc/init.d/network-manager ]]; then
-            sudo service network-manager stop
-        fi
-   fi
+	if [[ $OS == "Pentoo" ]]; then
+		if [[ -f /etc/init.d/NetworkManager ]]; then
+            		sudo /etc/init.d/NetworkManager stop
+        	else
+            		echo "Error in Config file. NetworkManager does not appear to be present."
+        	fi
+	else # were not using pentoo kill nm for systemd
+        	if [[ -f /etc/init.d/network-manager ]]; then
+           		 sudo service network-manager stop
+        	fi
+	fi
 elif [[ $OS == "Pentoo" ]]; then
         if [[ -e /etc/init.d/net.$IFACE1 ]]; then
             echo "$INFO Getting status of $IFACE1"
             get_RCstatus "net.$IFACE1"
-            [[ $STATUS == 'started' || $STATUS == 'inactive' ]] && /etc/init.d/net.$IFACE1 stop
+            [[ $STATUS == 'started' ]] && /etc/init.d/net.$IFACE1 stop
         fi
 fi
 
@@ -160,7 +154,7 @@ menu()
             sudo xterm -T "Arpspoof $IFACE1 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i $IFACE1 $ARP_VICTIM &>/dev/null &
         fi
     elif [[ $CHOICE == 6 ]]; then
-        sudo xterm -bg black -fg blue -T "iptables" -geometry 90x20 -e ./modules/n4p_iptables &>/dev/null &
+        sudo xterm -bg black -fg blue -T "iptables" -geometry 90x20 -e ./modules/firewall &>/dev/null &
     elif [[ $CHOICE == 7 ]]; then
         get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
         get_name "STATION="; STATION=$USE
