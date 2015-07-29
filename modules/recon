@@ -30,6 +30,7 @@ get_name "CHAN="; CHAN=$USE
 get_name "LOCAL_BSSID="; LOCAL_BSSID=$USE
 get_name "IFACE1="; IFACE1=$USE
 MON="${IFACE1}mon"
+IFACEBUG="0"
 # Text color variables
 TXT_BLD=$(tput bold)             # Bold
 BLD_PUR=${txtbld}$(tput setaf 5) # purple
@@ -46,13 +47,30 @@ do_it()
 {
     if [[ -z $(ip addr | grep -i "$MON") ]]; then
         iwconfig "$IFACE1" mode monitor #push $iface1 into monitor mode
-        [[ -z $(ip addr | grep -i "$MON") ]] && airmon-zc start $IFACE1
+        [[ -z $(ip addr | grep -i "$MON") ]] && airmon-ng start $IFACE1
     fi
+    do_it_check
+}
+
+do_it_check()
+{
     while [[ -z $(ip addr list | grep $MON) ]]; do
       echo -e "Waiting for monitor interface to come up\n" #add a counter so we can escape from this loop in future
-      sleep 3
+      sleep 1
+      if [[ $IFACEBUG == '4' ]]; then
+        sudo /etc/init.d/NetworkManager restart
+        sudo /etc/init.d/NetworkManager stop
+        do_it
+      fi
+
+      if [[ $IFACEBUG == "9" ]]; then
+        echo "There appears to be a problem creating the monitor interface. You need to investigate"
+        sleep 5
+        exit 2
+      fi
+      IFACEBUG=$((IFACEBUG + 1))
     done
-    #/bin/sh -c "/usr/bin/launch '/usr/sbin/airmon-zc' 'start' 'wlan1mon' 'sudo -s'"
+    #/bin/sh -c "/usr/bin/launch '/usr/sbin/airmon-ng' 'start' 'wlan1mon' 'sudo -s'"
     xterm -hold -bg black -fg blue -T "Recon" -geometry 90x20 -e airodump-ng ${MON} &>/dev/null &
     keepalive
 }
@@ -66,7 +84,7 @@ keepalive()
 
 killAll()
 {
-    airmon-zc stop $MON
+    airmon-ng stop $MON
     echo "${BLD_TEA}$(cat ${DIR_LOGO}/die.logo)${TXT_RST}"
     sleep 3
     exit 0

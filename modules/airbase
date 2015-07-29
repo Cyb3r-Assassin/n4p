@@ -112,11 +112,11 @@ killemAll()
 trap killemAll INT HUP;
 
 ##################################################################
-###############Setup for Airbase-ng and airmon-zc#################
+###############Setup for Airbase-ng and airmon-ng#################
 ##################################################################
 startairbase()
 {
-    [[ -z $(ip addr | grep -i "${MON}") ]] && airmon-zc start $IFACE1
+    [[ -z $(ip addr | grep -i "${MON}") ]] && airmon-ng start $IFACE1
 
     echo -n "$INFO STARTING SERVICE: AIRBASE-NG"
     if [[ $VERBOSE_LOGS == "True" ]]; then

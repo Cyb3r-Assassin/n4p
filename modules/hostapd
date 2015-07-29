@@ -16,7 +16,7 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
     [[ $SOURCE != /* ]] && SOURCE="${DIR}/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-DIR_CONF=/etc/n4p
+DIR_CONF=/etc/n4p/
 
 #######################################
 # Building a sane working environment #
@@ -24,7 +24,7 @@ DIR_CONF=/etc/n4p
 
 get_name() # Retrieve the config values
 {
-    USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
 }
 
 depends()

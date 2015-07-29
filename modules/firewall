@@ -5,20 +5,12 @@ if [[ $(whoami) != 'root'  ]]; then
     exit 0
 fi
 
-#retrieve absolute path structures so we can use symlinks and config files
-SOURCE="${BASH_SOURCE[0]}"
-while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
-    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="${DIR}/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
-done
-DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-DIR_CONF=/etc/n4p
-DIR_LOGO=/usr/share/n4p
+DIR_CONF=/etc/n4p/
+DIR_LOGO=/usr/share/n4p/
 
 get_name() # Retrieve the config values
 {
-    USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
 }
 
 IPT="/sbin/iptables"
@@ -43,7 +35,7 @@ TXT_RST=$(tput sgr0)             # Reset
 WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 INFO="${BLD_TEA}[${TXT_RST}${BLD_PUR} % ${TXT_RST}${BLD_TEA}]${TXT_RST}"
 
-echo "$(cat ${DIR_LOGO}/firewall.logo)"; sleep 2
+echo "$(cat ${DIR_LOGO}firewall.logo)"; sleep 2
 
 ##################################################################
 ######################Build the firewall##########################

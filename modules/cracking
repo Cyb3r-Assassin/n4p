@@ -8,27 +8,18 @@ if [[ $(id -u) != 0 ]]; then # Verify we are root if not exit
    exit 1
 fi
 
-#retrieve absolute path structures so we can use symlinks and config files
-SOURCE="${BASH_SOURCE[0]}"
-while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
-    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="${DIR}/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
-done
-DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-DIR_CONF=/etc/n4p
-DIR_LOGO=/usr/share/n4p
+DIR_CONF=/etc/n4p/
 
 #######################################
 # Building a sane working environment #
 #######################################
-xhost +
+xhost + # This is required for hashcat
 
-SESSIONFOLDER=/tmp/n4p # Set our tmp working configuration directory
+SESSIONFOLDER=/tmp/n4p/ # Set our tmp working configuration directory
 
 get_name() # Retrieve the config values
 {
-    USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
 }
 
 depends()
@@ -46,42 +37,41 @@ shallwecrack()
 {
     echo "${VICTIM_BSSID} was converted to hccap file. Here is the directory listing"
     ls ${SESSIONFOLDER}
-    read -p "Would you like to run Hashcat now on ${VICTIM_BSSID}.hccap? Y/N?" dohashcat
-    if [[ $dohashcat == [yY] ]]; then
+    read -p "Would you like to run Hashcat now on ${VICTIM_BSSID}.hccap? Y/N?" DOHASHCAT
+    if [[ $DOHASHCAT == [yY] ]]; then
         hashcat
-    elif [[ $dohashcat == [nN] ]]; then
+    elif [[ $DOHASHCAT == [nN] ]]; then
         exit 0
     else
-        echo "Hey there butterfinges"
+        echo "Hey there butterfingers"
         shallwecrack
     fi
 }
 
 hcap()
 {
-  if [[ -f ${SESSIONFOLDER}/${VICTIM_BSSID}-01.cap ]]; then
-    wpaclean clean.cap ${SESSIONFOLDER}/${VICTIM_BSSID}-01.cap
-    aircrack-ng -J "${SESSIONFOLDER}/${VICTIM_BSSID}-01.cap" "clean.cap" >> /dev/null
-    rm ${SESSIONFOLDER}/clean.cap
-    mv ${SESSIONFOLDER}/${VICTIM_BSSID}-01.cap.hccap ${SESSIONFOLDER}/${VICTIM_BSSID}.hccap
-    echo "${SESSIONFOLDER}/${VICTIM_BSSID}.hccap created"
-    [[ -f ${SESSIONFOLDER}/clean.cap ]] rm ${SESSIONFOLDER}/clean.cap
+  if [[ -f ${SESSIONFOLDER}${VICTIM_BSSID}-01.cap ]]; then
+    wpaclean clean.cap ${SESSIONFOLDER}${VICTIM_BSSID}-01.cap
+    aircrack-ng -J "${SESSIONFOLDER}${VICTIM_BSSID}-01.cap" "clean.cap" >> /dev/null
+    rm ${SESSIONFOLDER}clean.cap
+    mv ${SESSIONFOLDER}${VICTIM_BSSID}-01.cap.hccap ${SESSIONFOLDER}${VICTIM_BSSID}.hccap
+    echo "${SESSIONFOLDER}${VICTIM_BSSID}.hccap created"
     shallwecrack
-  else [[ ! -f ${SESSIONFOLDER}/${VICTIM_BSSID}-01.cap ]]; then
-      if [[ -f ${SESSIONFOLDER}/${VICTIM_BSSID}.hccap ]]; then
-          echo "${SESSIONFOLDER}/${VICTIM_BSSID}.hccap already exists"
+  else [[ ! -f ${SESSIONFOLDER}${VICTIM_BSSID}-01.cap ]]; then
+      if [[ -f ${SESSIONFOLDER}${VICTIM_BSSID}.hccap ]]; then
+          echo "${SESSIONFOLDER}${VICTIM_BSSID}.hccap already exists"
           shallwecrack
-      else 
+      else
         #This is an odd line we shouldn't see much. The hccap conversion removes the original cap file. 
         #This section is prompted if the expected cap is non existent and the expected hccap is also non existent
-          echo "${SESSIONFOLDER}/${VICTIM_BSSID}-01.cap not found! You will need to investigate why this happened."
+          echo "${SESSIONFOLDER}${VICTIM_BSSID}-01.cap not found! You will need to investigate why this happened."
       fi
   fi
 }
 
 hashcat()
 {
-  ./${HASHCAT_LOCATION}${HASHCAT_TYPE}.bin ${HASHCAT_MODE}${HASHCAT_THREADS} ${SESSIONFOLDER}/${VICTIM_BSSID}.hccap ${WORD_LIST} ${HASHCAT_RULES}
+  ./${HASHCAT_LOCATION}${HASHCAT_TYPE}.bin ${HASHCAT_MODE}${HASHCAT_THREADS} ${SESSIONFOLDER}${VICTIM_BSSID}.hccap ${WORD_LIST} ${HASHCAT_RULES}
 }
 depends
 hcap

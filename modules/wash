@@ -43,7 +43,7 @@ do_it()
 {
     if [[ -z $(ip addr | grep -i "$MON") ]]; then
         iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
-        airmon-zc start $IFACE1
+        airmon-ng start $IFACE1
     fi
     xterm -hold -bg black -fg blue -T "Dump" -geometry 90x20 -e wash -i $MON --ignore-fcs &>/dev/null &
     keepalive
@@ -58,7 +58,7 @@ keepalive()
 
 killAll()
 {
-    airmon-zc stop $MON
+    airmon-ng stop $MON
     echo "${BLD_TEA}$(cat ${DIR_LOGO}/die.logo)${TXT_RST}"
     sleep 2
     exit 0

