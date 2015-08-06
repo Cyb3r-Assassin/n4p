@@ -1,87 +1,236 @@
-#Use null values for no specified options instead of commenting lines.
-#Selected Device Settings. Option are case sensitive
-#OS options are Pentoo and Kali
-OS=Pentoo
-NETWORKMANAGER=True
-INTERFACE=Basic
+2.0.2 Defcon Build
 
-**********************************************************************************************
-#WIRELESS OPTIONS
-#AP options: AIRBASE
-AP=AIRBASE
-#Adapter used for system and internet
-IFACE0=eth0
-#Adapter used for attack
-IFACE1=wlan0
-ESSID=Pentoo1
-LOCAL_BSSID=00:14:4F:FF:FF:FF
-CHAN=
-BEACON=100
-PPS=100
-#Monitor options are: null, Custom, dhcpdump, arp
-MONITOR_MODE=Custom
-HOSTAPD_CONFIG=
-VERBOSE_LOGS=True
+Ebuild Updates
 
-**********************************************************************************************
-#NETWORKING OPTIONS
-BRIDGED=False
-BRIDGE_NAME=br0
-USE_VPN=False
-VPN_NAME=
+N4P config file setup with default values for Pentoo ISO
 
-**********************************************************************************************
-#ATTACK OPTIONS
-#Attacked Router Info
-#ATTAK options are: null, Handshake, Karma, SslStrip, WPS, WPE, WEP
-ATTACK=
-#Type options are. null, Z for WPA, z for WEP
-#Required if ATTACK is Handshake
-TYPE=Z
-#ENCRYPTION options are. null, 1 for WEP40, 2 for TKIP, 3 for WRAP, 4 for CCMP, 5 for WEP104
-#Required if TYPE is enabled
-ENCRYPTION=4
-VICTIM_BSSID=
-STATION=
-WPE_CONFIG=/var/lib/layman/pentoo/net-dialup/freeradius/files/eap_wpe.conf
+Changed the naming of <n4p_iptables> to <firewall> to better suit the modularized design.
 
-**********************************************************************************************
-#PACKET OPTIONS
-ETTERCAP_OPTIONS=-Tqz -i at0 -w ${sessionfolder}/recovered_passwords.pcap
-#ARP_VICTIM is the IP or Gateway of target.
-ARP_VICTIM=
+ok get to this later
 
-******************************************************************************************************
-******The Hascat syntaxes used in this config are extremely sensitive do not assume anything is*******
-************out of place and be sure to mimmic them exactly if you make changes.**********************
-******************************************************************************************************
-#CRACKING METHODS
-#Cracking options are: Aircrack, Hashcat
-CRACK=Aircrack
-#Full path dir to word list used for cracking. e.g. /home/$USER/wordlists/dic.txt
-WORD_LIST=/usr/share/dict/cracklib-words
-#HASHCAT_TYPE examples oclHashcat64, hashcat-cli32
-HASHCAT_TYPE=oclHashcat64
-HASHCAT_LOCATION=home/$user/oclHashcat-1.30/
-HASHCAT_MODES=-m2500
-HASHCAT_THREADS= -n 3
-HASHCAT_RULES=-r /home/$user/hashcat/rules/rockyou-30000.rule -r /home/$user/hashcat/rules/best64.rule
 
-******************************************************************************************************
-* Hashcat is complex program to syntax for. If you know what you're doing modify away.
-* A quick hack tip. If you don't want to use rules then eliminate the option by the below example.
-* if you want to use brute fore wild cards do so by placing the commands in the WORD_LIST= section
-* such like WORD_LIST=-a3 ?d?D --increment-min=10 -s 58894801152
-******************************************************************************************************
+2.0.1
+Fixed a bad if nest in dump
+tweak some things in recon
 
-# You may not comment out option lines but you may disable options if you decide on storing multiple 
-# possible options for testing. This is done by e.g. #IFACE1\=
+2.0
+Upstraem aircrack changes addressed via ebuild, Gentoo/Pentoo only.
 
-**********************************************************************************************
-*********************These options built via custom module variables only*********************
-***********Module variables may not contain any matching word from an exiting module.*********
-  e.g. my_custom_module=
-         and
-  e.g. custom_module=
-*********If this happens any programmatic reference to custom_module= will be broken**********
-**********************************************************************************************
+Hostapd working for WPE attacks
+
+Fixed very broken logic that had evolved in intiation processes in n4p_main.sh
+
+Made changes to the ebuild.
+
+Changed the logic of assigned processes to the at0 interface to relate only to an as needed task.
+
+Adjust SslStrip call process that allows it to be initiated individually without having to be built from an AP initiation with pre selected attack.
+
+Modulerized existing N4P scripts
+
+Broke out n4p_main.sh into segrigated scripts based on functions
+
+Fixed the code for adapter bridging, support for Pentoo/Gentoo only! (it's been broken for a while)
+
+Added Hashcat functionality for cracking
+
+Added .cap to hccap conversions
+
+Added advanced user mode with shell interaction
+
+Added Network Manager support
+
+Added Kali support for wireless portions
+
+Hostapd Accesspoint added
+
+VPN works through the firewall module. Uses openvpn.
+
+
+1.3
+Aircrack suit has made changes upstream that break n4p on live git builds of aircrack. This is marginally fixed here but still some bugs. Working on full comparability still.
+
+1.2
+Fixed a bug in the code and config that referenced variables as duplicates if both category's were not null when launching Airbase as a functional AP..
+
+1.1 
+Fixed the stuff 1.0 broke.
+
+
+1.0
+Syntax error in recon, bad indentation block
+
+Added WPS support with Wash and Bully
+
+0.9-r3
+
+Stricter code constraints here and there
+
+Updated monitor.sh file compatibility with Metalog and Syslog-ng since Pentoo is using Metalog.
+
+Introduced youtube demonstration videos
+
+0.9-r2
+
+Preserved system log file now
+
+Moved working Directory path strings into variables
+
+Introduced README file
+
+0.9-r1
+
+Improved ARPSPOOF by increasing cognition with config file options
+
+Cleaned up the functions for iptables. Didn't need to be so elaborate for newer versions of n4p
+
+Extended ettercaps ability by transfering its command options into the config file
+
+Fixed a trivial parsing of ip retrieval leaving trailing space
+
+Lot of code changes for the the future of n4p but mean nothing to you.
+
+Allowed recon to now check for rfkill lock
+
+0.9
+
+Fixed a bug with monitor device assignment when not using wlan0
+
+Removed airmon-zc check kill, it's no longer needed
+
+Added EXIT option from menu.
+
+Prevented *.cap files from enumerating out of application scope.
+
+Fixed file name issue under cracking.
+
+0.8
+Allowed airmon-zc to remain active between menu navigation / attacks as long as no child functions of main menu are closed
+
+Adjust some methodology of the attacks. Just fluency stuff
+
+Fixed a title name
+
+Fixed where I forgot the -a bssid into the airbase option for handshake attacks
+
+Finished selectable options for monitoring modes "requires +extras use flag"
+
+Added word list file option for cracking
+
+Added SslStrip option under ATTACK option of n4p.conf
+
+Updated firewall questioning
+
+Cleaned up some minor code sections that started to get away from me as became sleep deprived
+
+Updated some code to comply with airmon-zc changes
+
+Changed install dir's of configs and logos due to Zero-Chaos excessively bitting my head off
+
+0.7
+Intergrated SSLstrip 
+
+Added Ettercap use
+
+Added ARP Spoofing support
+
+Multiple monitoring capabilities added
+
+Did away with fast options and help option
+
+Introduced config file based operations
+
+Moved firewall settings into its own script
+
+Added reconisins for handshake based cracking
+
+Added pcap cracking methods
+
+Set basis for hostapd reintegration
+
+Trimmed code further
+
+Add Aireplay-ng deauthentication
+
+Added logos
+
+file name changes made
+
+
+0.6
+Added a kickstart script in front of the previous n4p.sh and renamed it to n4p_main.sh to work around an xdisplay issue.
+
+Increased cognitive targeted logging
+
+Fixed fast mode without bridging
+
+Fixed occasional bug of route and ip assignments not being accepted to the AP
+
+Fixed DHCP on some systems freely assigning bad routes
+
+Adjusted ip and route commands adhering to new no wild card assignment standards
+
+Moved attacks out for individual scripts
+
+allowed users to specify interfaces during launch
+
+allow users to adjust iprange of AP from dhcpd.conf
+
+prepare to bring back hostapd for wider range of attacks
+
+Fixed sym link conflict with the AP and DHCPD
+
+Cleaned up execution verification script.
+
+Changed some variable names for future scalability
+
+0.5
+Fixed firewall routing with bridging
+
+Cleaned up loosely defined variables and variable structures
+
+Updated find attributes to -wholename
+
+Cleaned up error checking and improved error loops and added per process monitoring
+
+Cleaned verbose outputs for easier follow along reading
+
+Added -- switches/flags feature. e.g. n4p --help
+
+Lot of code changes and additions. 
+New methods of operations and package controll.
+
+New less redundant more sane kill script logic
+
+Removed dnsmasq - Was just too much for me to maintain and account for everyones boxes.
+
+Changed ESSID to Pentoo
+
+Changed some ip lease ranges on DHCPD
+
+Added protection to prevent rfkill traps
+
+More comprehensive text color usage.
+
+added n4p_iptables.sh so iptables can be utilized without running n4p
+
+Removed Hostapd. Was too hard for me to provide in production environment. Hostapd requires many config file 
+attributes that are designed to be permanent on your box. If you want to use hostapd and not airbase then you're on your own.
+
+0.4 12-09-2013
+Added path detection and absolute path relativeness for symlinking ability within ebuilds.
+
+Moved dnsmasq settings into config file
+
+0.3 11-10-2013
+Moved airmon-ng to Zero_Chaos's airmon-zc
+
+Removed minor redundant variables
+
+Encoded ESSID to fuck with ios6 because we can
+
+0.2 11-02-2013
+iptable rules updated for sslstrip
+
+0.1 10-25-2013
+Alpha testing
