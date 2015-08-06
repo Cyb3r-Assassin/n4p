@@ -3,7 +3,7 @@ BLD_RED=${txtbld}$(tput setaf 1) # red
 BLD_TEA=${txtbld}$(tput setaf 6) # teal
 TXT_RST=$(tput sgr0)             # Reset
 
-DIR_LOGO=/usr/share/n4p
+DIR_LOGO=/usr/share/n4p/
 LOG_METALOG=/var/log/everything/current
 LOG_SYSLOG_NG=/var/log/dhcpd.log
 
@@ -23,7 +23,7 @@ while true; do
         do GOTCHYA=$(egrep 'DHCPACK|$1' | awk -Fon '{print $2'})
         done < $USE
         clear
-        echo "${BLD_TEA}$(cat ${DIR_LOGO}/monitor.logo)${TXT_RST}"
+        echo "${BLD_TEA}$(cat ${DIR_LOGO}monitor.logo)${TXT_RST}"
         echo -e "$GOTCHYA \n"
         sleep 8
 done

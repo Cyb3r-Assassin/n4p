@@ -13,20 +13,20 @@ SOURCE="${BASH_SOURCE[0]}"
 while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
     SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="${DIR}/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
+    [[ $SOURCE != /* ]] && SOURCE="$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-DIR_CONF=/etc/n4p
-DIR_LOGO=/usr/share/n4p
+DIR_CONF=/etc/n4p/
+DIR_LOGO=/usr/share/n4p/
 
 #######################################
 # Building a sane working environment #
 #######################################
-SESSIONFOLDER=/tmp/n4p # Set our tmp working configuration directory and then build config files
+SESSIONFOLDER=/tmp/n4p/ # Set our tmp working configuration directory and then build config files
 
 get_name() # Retrieve the config values
 {
-    USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
 }
 
 get_state() # Retrieve the state of interfaces
@@ -47,27 +47,30 @@ get_RCstatus() # What is the status from OpenRC of the service
 depends()
 {
     get_name "OS="; OS=$USE
+    get_name "NETWORKMANAGER="; NETWORKMANAGER=$USE
     get_name "IFACE0="; IFACE0=$USE
     get_name "IFACE1="; IFACE1=$USE
-    get_name "ESSID="; ESSID=$USE
+    get_name "ESSID="; ESSID=$USE #This is what we name the AP via the config file
     get_name "STATION="; STATION=$USE
     get_name "LOCAL_BSSID="; LOCAL_BSSID=$USE
     get_name "CHAN="; CHAN=$USE
     get_name "BEACON="; BEACON=$USE
     get_name "PPS="; PPS=$USE
-    get_name "AP="; UAP=$USE #This is what we name the AP via the config file
+    get_name "AP="; UAP=$USE #This is how we determin accesspoint service type via the config file
     get_name "ATTACK="; ATTACK=$USE
     get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
-    get_name "TYPE="; TYPE=$USE
+    get_name "SECURITY_TYPE="; SECURITY_TYPE=$USE
     get_name "ENCRYPTION="; ENCRYPTION=$USE
     get_name "MONITOR="; MONITOR=$USE
     get_name "VERBOSE_LOGS="; VERBOSE_LOGS=$USE
+    get_name "HOSTAPD_CONFIG="; HOSTAPD_CONFIG=$USE
     AP="at0" #This is the device name as per "ip addr"
     MON="${IFACE1}mon"
-    AP_GATEWAY=$(grep routers ${DIR_CONF}/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
-    AP_SUBNET=$(grep netmask ${DIR_CONF}/dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
-    AP_IP=$(grep netmask ${DIR_CONF}/dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
-    AP_BROADCAST=$(grep broadcast-address ${DIR_CONF}/dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+    IFACEBUG="0"
+    AP_GATEWAY=$(grep routers ${DIR_CONF}dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+    AP_SUBNET=$(grep netmask ${DIR_CONF}dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
+    AP_IP=$(grep netmask ${DIR_CONF}dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 2)
+    AP_BROADCAST=$(grep broadcast-address ${DIR_CONF}dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
     # Text color variables
     TXT_UND=$(tput sgr 0 1)          # Underline
     TXT_BLD=$(tput bold)             # Bold
@@ -87,7 +90,7 @@ depends()
 }
 banner()
 {
-    echo "${BLD_TEA}$(cat ${DIR_LOGO}/auth.logo)${TXT_RST}"; sleep 3
+    echo "${BLD_TEA}$(cat ${DIR_LOGO}auth.logo)${TXT_RST}"; sleep 3
 }
 setupenv()
 {
@@ -97,16 +100,17 @@ setupenv()
 
 keepalive()
 {
-    read -p "$WARN Press ctrl^c when you are ready to go down!" ALLINTHEFAMILY # Protect this script from going down hastily
+    read -p "${WARN} Press ctrl^c when you are ready to go down!${TXT_RST}" ALLINTHEFAMILY # Protect this script from going down hastily
     [[ $ALLINTHEFAMILY != 'SGFjayBUaGUgUGxhbmV0IQ==' ]] && clear; keepalive
 }
 
 killemAll()
 {
-    echo -e "\n\n$WARN The script has died. Major network configurations have been modified.\nWe must go down cleanly or your system will be left in a broken state!"
+    echo -e "\n\n${WARN} The script has died. Major network configurations have been modified.\nWe must go down cleanly or your system will be left in a broken state!${TXT_RST}"
     pkill airbase-ng
+    [[ $UAP == "AIRBASE" ]] && airmon-ng stop $MON
 
-    echo "$INFO The environment is now sanitized cya"
+    echo "${INFO} The environment is now sanitized cya${TXT_RST}"
     exit 0
 }
 trap killemAll INT HUP;
@@ -114,22 +118,87 @@ trap killemAll INT HUP;
 ##################################################################
 ###############Setup for Airbase-ng and airmon-ng#################
 ##################################################################
-startairbase()
+nm_check()
 {
-    [[ -z $(ip addr | grep -i "${MON}") ]] && airmon-ng start $IFACE1
+  if [[ $NETWORKMANAGER == "True" ]]; then
+    if [[ $OS == "Pentoo" ]]; then
+      if [[ -f /etc/init.d/NetworkManager ]]; then
+        sudo /etc/init.d/NetworkManager restart
+        sleep 7
+        sudo /etc/init.d/NetworkManager stop
+        sleep 2
+      else
+        echo "Error in Config file. NetworkManager does not appear to be present."
+      fi
+    else # were not using pentoo kill nm for systemd
+      if [[ -f /etc/init.d/network-manager ]]; then
+        sudo service network-manager stop
+        sudo service network-manager start
+        sudo service network-manager stop
+      fi
+    fi
+  elif [[ $OS == "Pentoo" ]]; then
+      if [[ -e /etc/init.d/net.$IFACE1 ]]; then
+          echo "$INFO I'm having issues with $IFACE1"
+      fi
+  fi
+}
 
-    echo -n "$INFO STARTING SERVICE: AIRBASE-NG"
+do_it() #move this into a module next version and add checks for kali people
+{
+    [[ $(iw "$IFACE1" info | grep type | awk -F' ' '{print $2}') != "managed" ]] && iw dev "$IFACE1" set monitor none
+    if [[ $UAP == "AIRBASE" ]]; then
+      [[ -z $(ip addr | grep -i "$MON") ]] && airmon-ng start $IFACE1
+      do_it_check
+    elif [[ $UAP == "HOSTAPD" ]]; then
+      starthostapd
+    else
+      echo "${WARN}Error in Config file. Can't determin AccessPoint type.${TXT_RST}"
+      sleep 5
+      exit 1
+    fi
+}
+
+do_it_check() #move this into a module next version and add checks for kali people
+{
+    while [[ -z $(ip addr list | grep $MON) ]]; do
+      echo -e "${BLD_TEA}Waiting for monitor interface to come up\n${TXT_RST}"
+      echo "Attempt $IFACEBUG"  
+      sleep 3
+      if [[ $IFACEBUG == '2' || $IFACEBUG == '5' || $IFACEBUG == '14' || $IFACEBUG == '18' ]]; then
+        nm_check
+        if [[  $IFACEBUG == '9' || $IFACEBUG == '16' ]]; then # NM May be hung, Go to hell NetworkManager
+          kill -9 $(ps -A | grep NetworkManager | awk -F' ' '{print $1}')
+        fi
+      fi
+
+      if [[ $IFACEBUG == "20" ]]; then
+        echo "${WARN}There appears to be a problem creating the monitor interface. You need to investigate. The following output may help. ${TXT_RST}"
+        iw "$IFACE1" list
+        sleep 7
+        exit 2
+      fi
+      IFACEBUG=$((IFACEBUG + 1))
+      do_it
+    done
+    sleep 3
+    [[ $UAP == "AIRBASE" ]] && startairbase
+}
+
+startairbase() #There is still something seriously wonky now since 1.1 with airbase as AP regarding assigning DHCP fix this HIGH PRIORITY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+{
+    echo -n "{$INFO} STARTING SERVICE: AIRBASE-NG${TXT_RST}"
     if [[ $VERBOSE_LOGS == "True" ]]; then
-        echo "$(date)" >> ${SESSIONFOLDER}/logs/airbase-ng.log
-        xterm -hold -bg black -fg green -T "Airbase-NG Log Window" -geometry 90x20 -e tail -f ${SESSIONFOLDER}/logs/airbase-ng.log &>/dev/null &
+        echo "$(date)" >> ${SESSIONFOLDER}logs/airbase-ng.log
+        xterm -hold -bg black -fg green -T "Airbase-NG Log Window" -geometry 90x20 -e tail -f ${SESSIONFOLDER}logs/airbase-ng.log &>/dev/null &
     fi
 
     if [[ $ATTACK == "Handshake" || $ATTACK == "WEP" ]]; then
-        airbase-ng -c ${CHAN} -a ${VICTIM_BSSID} -e ${ESSID} -${TYPE} ${ENCRYPTION} -v $MON >> ${SESSIONFOLDER}/logs/airbase-ng.log &
+        airbase-ng -c ${CHAN} -a ${VICTIM_BSSID} -e ${ESSID} -${SECURITY_TYPE} ${ENCRYPTION} -v $MON >> ${SESSIONFOLDER}logs/airbase-ng.log &
     elif [[ $ATTACK == "Karma" ]]; then
-        airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -C 15 -v $MON >> ${SESSIONFOLDER}/logs/airbase-ng.log &
+        airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -C 15 -v $MON >> ${SESSIONFOLDER}logs/airbase-ng.log &
     else # This just gives us an AP for Sniffing
-        airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -v $MON >> ${SESSIONFOLDER}/logs/airbase-ng.log &
+        airbase-ng -c $CHAN -a $LOCAL_BSSID -e $ESSID -v $MON >> ${SESSIONFOLDER}logs/airbase-ng.log &
     fi
     sleep 2
 
@@ -141,7 +210,7 @@ startairbase()
     done
 
     if [[ -z $ATTACK ]]; then
-        echo -ne "\n$INFO Assigning IP and Route to $AP\n"
+        echo -ne "\n$INFO Assigning IP and Route to $AP\n${TXT_RST}"
         # setting ip and route doesn't always take, lets ensure it sticks and check no other routes or ip's are getting assigned not by us then remove them if so.
         local CHK_GATEWAY=$(ip addr | grep $AP | grep -i inet | awk -Finet '{print $2}' | awk -F brd '{print $1}' | cut -d ' ' -f 2)
         [[ -n $CHK_GATEWAY && $CHK_GATEWAY != "${AP_GATEWAY}/32" ]] && ip addr del $CHK_IP dev $AP
@@ -155,10 +224,12 @@ startairbase()
         done
 
         while [[ -z $(route -n | grep $AP | grep $AP_GATEWAY ) ]]; do
-            sleep 0.3
-            route add -net $AP_IP netmask $AP_SUBNET gw $AP_GATEWAY
+            sleep 0.3       
+            ip route add ${AP_IP}/24 via $AP_GATEWAY
+            #route add -net $AP_IP netmask $AP_SUBNET gw $AP_GATEWAY #Out with the old in with the new
         done
         route -n
+        ${DIR}/./dhcp
     fi
     monitor $AP
 }
@@ -167,7 +238,7 @@ monitor()
 {
     if [[ -n $MONITOR ]]; then
         if [[ $MONITOR == "Custom" ]]; then
-            xterm -hold -geometry 60x35 -bg black -fg blue -T "N4P Victims" -e ./modules/monitor $1 &>/dev/null &
+            xterm -hold -geometry 60x35 -bg black -fg blue -T "N4P Victims" -e ${DIR}./monitor $1 &>/dev/null &
         elif [[ $MONITOR == "dhcpdump" ]]; then
             xterm -hold -bg black -fg blue -T "N4P Victims" -geometry 65x15 -e dhcpdump -i $1 &>/dev/null &
         elif [[ $MONITOR == "arp" ]]; then
@@ -176,8 +247,14 @@ monitor()
     fi
 }
 
+starthostapd()
+{
+  hostapd $HOSTAPD_CONFIG
+  monitor $AP
+}
+
 depends
 banner
 setupenv
-startairbase
+do_it
 keepalive

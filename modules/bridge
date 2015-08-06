@@ -1,30 +1,27 @@
 #!/bin/bash
-##############################################
-# Do all prerun variables and safty measures #
-# before anything else starts happening      #
-##############################################
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+#     This Shit is deprecated update it ASAP!!
+#     Things are likely broken by now
+#
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+###############################################
+# Do all prerun variables and safety measures #
+# before anything else starts happening       #
+###############################################
 if [[ $(id -u) != 0 ]]; then # Verify we are root if not exit
    echo "Please Run This Script As Root or With Sudo!" 1>&2
    exit 1
 fi
 
-#retrieve absolute path structures so we can use symlinks and config files
-SOURCE="${BASH_SOURCE[0]}"
-while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
-    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="${DIR}/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
-done
-DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-DIR_CONF=/etc/n4p
-DIR_LOGO=/usr/share/n4p
+DIR_CONF=/etc/n4p/
 
 #######################################
 # Building a sane working environment #
 #######################################
 get_name() # Retrieve the config values
 {
-    USE=$(grep $1 ${DIR_CONF}/n4p.conf | awk -F= '{print $2}')
+    USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
 }
 
 get_state() # Retrieve the state of interfaces
@@ -50,10 +47,10 @@ depends()
     get_name "BRIDGED="; BRIDGED=$USEget_name "OS="; OS=$USE
     IPT="/sbin/iptables"
     AP="at0" #This is the device name as per "ip addr"
-    AP_GATEWAY=$(grep routers ${DIR_CONF}/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
-    AP_SUBNET=$(grep netmask ${DIR_CONF}/dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
-    AP_IP=$(grep netmask ${DIR_CONF}/dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
-    AP_BROADCAST=$(grep broadcast-address ${DIR_CONF}/dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+    AP_GATEWAY=$(grep routers ${DIR_CONF}dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
+    AP_SUBNET=$(grep netmask ${DIR_CONF}dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
+    AP_IP=$(grep netmask ${DIR_CONF}dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
+    AP_BROADCAST=$(grep broadcast-address ${DIR_CONF}dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
     # Text color variables
     TXT_UND=$(tput sgr 0 1)          # Underline
     TXT_BLD=$(tput bold)             # Bold
@@ -147,7 +144,7 @@ fbridge()
         [[ $THE_BRIDGE == "$AP" ]] && RESP_BR_2=$AP || RESP_BR_2=$IFACE1
         openrc_bridge
     elif [[ $BRIDGED != "False" ]]; then
-        echo "echo [$WARN] ERROR in n4p.conf configuration file, no Bridge found"
+        echo "${WARN} ERROR in n4p.conf configuration file, no Bridge found"
     else
         echo "Bridging is disabled in n4p config file"
         sleep 3

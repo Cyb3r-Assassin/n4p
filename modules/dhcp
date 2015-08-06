@@ -1,8 +1,8 @@
 #!/bin/bash
-##############################################
-# Do all prerun variables and safty measures #
-# before anything else starts happening      #
-##############################################
+###############################################
+# Do all prerun variables and saftey measures #
+# before anything else starts happening       #
+###############################################
 if [[ $(id -u) != 0 ]]; then # Verify we are root if not exit
    echo "Please Run This Script As Root or With Sudo!" 1>&2
    exit 1
@@ -31,11 +31,11 @@ depends()
 dhcp()
 {
     if [[ -n $(grep -i Pentesters_AP ${DIR_CONF}dhcpd.conf | awk '{print $2}') ]]; then
-        [[ $BRIDGED != 'True' ]] && /etc/init.d/dhcpd restart || /etc/init.d/net.$BRIDGE_NAME start
+        [[ $BRIDGED != 'True' ]] && /etc/init.d/dhcpcd restart || /etc/init.d/net.$BRIDGE_NAME start #consider calling dhcpd $iface in future
     else # We apparently don't have the proper configuration file. Make the changes
         cat ${DIR_CONF}dhcpd.conf >> /etc/dhcp/dhcpd.conf
         dhcp
     fi
 }
 depends
-fbridge
+dhcp
