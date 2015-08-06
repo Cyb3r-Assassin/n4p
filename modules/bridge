@@ -49,7 +49,7 @@ depends()
     AP="at0" #This is the device name as per "ip addr"
     AP_GATEWAY=$(grep routers ${DIR_CONF}dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
     AP_SUBNET=$(grep netmask ${DIR_CONF}dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
-    AP_IP=$(grep netmask ${DIR_CONF}dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
+    AP_IP=$(grep netmask ${DIR_CONF}dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 2)
     AP_BROADCAST=$(grep broadcast-address ${DIR_CONF}dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
     # Text color variables
     TXT_UND=$(tput sgr 0 1)          # Underline
