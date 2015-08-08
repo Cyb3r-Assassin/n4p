@@ -7,32 +7,15 @@ DIR_LOGO=/usr/share/n4p/
 LOG_METALOG=/var/log/everything/current
 LOG_SYSLOG_NG=/var/log/dhcpd.log
 
-if [[ -f $LOG_METALOG ]]; then
-    USE=$LOG_METALOG
-elif [[ -f $LOG_SYSLOG_NG ]]; then
-    USE=$LOG_SYSLOG_NG
-else
+echo "${BLD_TEA}$(cat ${DIR_LOGO}/monitor.logo)${TXT_RST}"
+
+#if [[ -f $LOG_METALOG ]]; then
+#    USE=$LOG_METALOG
+#elif [[ -f $LOG_SYSLOG_NG ]]; then
+#    USE=$LOG_SYSLOG_NG
+#else
     echo "We were unable to locate any system log files\nPlease fix or use a different mode"
 fi
 
-mv $USE ${USE}.bak
-echo "" > $USE
-
-while true; do
-        while read line
-        do GOTCHYA=$(egrep 'DHCPACK|$1' | awk -Fon '{print $2'})
-        done < $USE
-        clear
-        echo "${BLD_TEA}$(cat ${DIR_LOGO}monitor.logo)${TXT_RST}"
-        echo -e "$GOTCHYA \n"
-        sleep 8
-done
-
-killemAll()
-{
-    rm $USE
-    mv ${USE}.bak $USE
-    exit 0
-}
-
-trap killemAll INT HUP;
+#tail -f $USE | grep at0 | awk -FDHCPACK '{print $2}' | awk -Fvia '{print $1}'
+tail -f /var/log/dhcpd.log

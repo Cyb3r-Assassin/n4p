@@ -195,7 +195,7 @@ menu()
                     echo "${BLD_TEA}Nothing to do!${TXT_RST}"
                 fi
             elif [[ $CHOICE == "list modules" || $CHOICE == "show modules" ]]; then
-                printf %s "$(ls modules/)"
+                printf %s "$(ls ${DIR}/modules/)"
             #elif [[ $CHOICE = set* ]]; then #We may in future make variables dynamic from the module
             #      AP=tester
             #      cut_CHOICE $CHOICE

