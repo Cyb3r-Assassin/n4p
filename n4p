@@ -178,7 +178,7 @@ menu()
                 cut_choice $CHOICE
                 echo "use=$CHOICE"
                 if [[ ! -f ${DIR}/modules/$CHOICE ]]; then
-                    echo "${BLD_TEA}You seem to be confused.${TXT_RST}"
+                    echo "${BLD_TEA}JarJar, yousa seem to be confused.${TXT_RST}"
                 else
                     RUN=$CHOICE
                 fi
@@ -210,7 +210,7 @@ menu()
             fi
         else
             echo "${BLD_TEA}I'm confused.${TXT_RST}"
-            echo "${BLD_TEA}Why not try Advanced mode!${TXT_RST}"
+            echo "${BLD_TEA}You may be a Ninja, Why not try Advanced mode!${TXT_RST}"
         fi
     fi
     menu

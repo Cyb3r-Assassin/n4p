@@ -1,3 +1,13 @@
+2.0.3
+
+Added WPE example certs and conf file
+
+Adjustments to hostapd conf file
+
+easter eggs
+
+Prepping for new modules
+
 2.0.2 Defcon Build
 
 Ebuild Updates
@@ -6,8 +16,23 @@ N4P config file setup with default values for Pentoo ISO
 
 Changed the naming of <n4p_iptables> to <firewall> to better suit the modularized design.
 
-ok get to this later
+removed .sh from exacutable file naming
 
+Implamented hostapd default config files in n4p config directory /etc/n4p/
+
+Fixed DHCP and removed its system integration to utilise n4p only dhcp config file from /etc/n4p/
+
+added robust and axhaustive measures of woking with Netwok Manager and resolutions of interface module load failures while utilizing Network Manager.
+
+converted all remaining rout assignments from legacy applications to current ip standards
+
+Fixed an action call in bridge module
+
+Tried to make font colors easier to reading
+
+cleaned up unused variables throughout modules
+
+Added the new monitor interface and NM control for airmon-ng in all modules that user airmon-ng
 
 2.0.1
 Fixed a bad if nest in dump

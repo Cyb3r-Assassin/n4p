@@ -131,7 +131,7 @@ nm_check()
       else
         echo "Error in Config file. NetworkManager does not appear to be present."
       fi
-    else # were not using pentoo kill nm for systemd
+    else # we're not using pentoo kill nm for systemd
       if [[ -f /etc/init.d/network-manager ]]; then
         sudo service network-manager stop
         sudo service network-manager start
@@ -218,7 +218,8 @@ setroutes()
         route -n
         ${DIR}/./dhcp
 }
-startairbase() #There is still something seriously wonky now since 1.1 with airbase as AP regarding assigning DHCP fix this HIGH PRIORITY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+startairbase()
 {
     echo -n "{$INFO} STARTING SERVICE: AIRBASE-NG${TXT_RST}"
     if [[ $VERBOSE_LOGS == "True" ]]; then
