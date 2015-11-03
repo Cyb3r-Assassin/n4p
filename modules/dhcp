@@ -1,33 +1,41 @@
 #!/bin/bash
+###############################################
+# Do all prerun variables and saftey measures #
+# before anything else starts happening       #
+###############################################
+if [[ $(id -u) != 0 ]]; then # Verify we are root if not exit
+   echo "Please Run This Script As Root or With Sudo!" 1>&2
+   exit 1
+fi
+
 DIR_CONF=/etc/n4p/
 
+#######################################
+# Building a sane working environment #
+#######################################
 get_name() # Retrieve the config values
 {
     USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
 }
 
-get_name "AP="; UAP=$USE #This is how we determin accesspoint service type via the config file
-get_name "IFACE1="; IFACE1=$USE
-BLD_RED=${txtbld}$(tput setaf 1) # red
-BLD_TEA=${txtbld}$(tput setaf 6) # teal
-TXT_RST=$(tput sgr0)             # Reset
-[[ $UAP == "HOSTAPD" ]] && AP="$IFACE1" || AP="at0" #This is the device name as per "ip addr"
+depends()
+{
+    get_name "BRIDGED="; BRIDGED=$USE
+    get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
+}
 
-DIR_LOGO=/usr/share/n4p/
-LOG_METALOG=/var/log/everything/current
-LOG_SYSLOG_NG=/var/log/dhcpd.log
 
-echo "${BLD_TEA}$(cat ${DIR_LOGO}/monitor.logo)${TXT_RST}"
-
-#if [[ -f $LOG_METALOG ]]; then
-#    USE=$LOG_METALOG
-#elif [[ -f $LOG_SYSLOG_NG ]]; then
-#    USE=$LOG_SYSLOG_NG
-#else
-#    echo "We were unable to locate any system log files\nPlease fix or use a different mode"
-#fi
-echo -e "\n\n\n\n\n\n\n" >> $LOG_SYSLOG_NG
-#tail -f ${LOG_SYSLOG_NG} | grep $AP | awk -FDHCPACK '{print $2}' #| cut -d' ' -f 3,4,5
-#tail -f /var/log/dhcpd.log | grep wlan2 | awk -FDHCPACK '{print $2}' | cut -d' ' -f 3,4,5
-#tail -f /var/log/dhcpd.log | grep wlan2 | awk -FDHCPACK '{print $2}' | cut -d' ' -f 3,4,5
-tail -f $LOG_SYSLOG_NG
+#################################################################
+#################Verify our DHCP and bridge needs################
+#################################################################
+dhcp()
+{
+    if [[ -n $(grep -i Pentesters_AP ${DIR_CONF}dhcpd.conf | awk '{print $2}') ]]; then
+        [[ $BRIDGED != 'True' ]] && /etc/init.d/dhcpcd restart || /etc/init.d/net.$BRIDGE_NAME start
+    else # We apparently don't have the proper configuration file. Make the changes
+        cat ${DIR_CONF}dhcpd.conf >> /etc/dhcp/dhcpd.conf
+        dhcp
+    fi
+}
+depends
+dhcp
