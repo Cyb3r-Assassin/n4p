@@ -6,7 +6,7 @@
 * Fully manages system states automatically for Airbase-ng with bridging and ipv4_forwarding ability.
 * Configures all necessary elements and performs MITM, ARP, WPA Cracking, Sniffing and SSLstrip attacks.
 
-#### 2.0 Added user initiative modularization scripts. Now write your own modules in Bash or Python or Perl!
+#### 2.0 Added user initiative modularization scripts. Now write your own modules in Bash or Python or Perl or any language!
 #### 2.0 Wireless operations now support Debian and Kali linux!
 
 Opening screenshot of n4p
@@ -15,7 +15,6 @@ Opening screenshot of n4p
 
 Configuration file modified by user. All Access Point options, devices, and attacking methods are set here.
 The user may modify options before launching new attacks without interrupting current attack, as long as the current attack window remains open.
-
 
 > You may not comment out option lines but you may disable options if you decide on storing multiple possible options for testing.
 > This is done by e.g. #IFACE1\=
@@ -27,8 +26,6 @@ Flexibility of ettercaps options have been preserved by allowing the user to cha
 ![n4p.conf](http://i.imgur.com/gZ0aV5H.png)
 
 N4P uses it's own DHCP configuration for it's Access Point creation. We do this so that connected targets can not view our machine inside the local network.
-The only current limitation is n4p writes these settings into the system /etc/dhcp/dhcpd.conf file upon the first initial run time.
-You are welcome to modify the ip range of this file but you must do it before you ever use n4p or manually remove the entry from /etc/dhcp/dhcpd.conf
 
 ![dhcp](http://i.imgur.com/xRtUt3y.png)
 
@@ -82,20 +79,21 @@ Some advanced network interface operations such as bridging interfaces only work
 ##For Debian Kali users only!
 You need to install n4p manually in this exact directy structure.
 
-    /usr/lib64/n4p/
-        n4p.sh modules
-    /usr/lib64/n4p/modules/
+    /usr/lib/n4p/
+        n4p modules
+ 
+    /usr/lib/n4p/modules/
       All files in the modules folder here
+      
+    /usr/share/n4p
+      auth.logo die.logo dump.logo firewall.logo monitor.logo opening.logo recon.logo zed.logo wash.logo
+
+    /etc/n4p
+      dhcpd.conf n4p.conf hostapd.conf wpe.conf radius.conf ca.pem server.pem
 
 Create a sym link
 
-        ln -s /usr/lib64/n4p/n4p.sh /usr/bin/n4p
-
-        /usr/share/n4p
-                auth.logo die.logo dump.logo firewall.logo monitor.logo opening.logo recon.logo zed.logo wash.logo
-
-        /etc/n4p
-            dhcpd.conf n4p.conf
+        ln -s /usr/lib/n4p/n4p /usr/bin/n4p
 
 **BUGS**
 
