@@ -1,43 +1,17 @@
 #!/bin/bash
-###############################################
-# Do all prerun variables and saftey measures #
-# before anything else starts happening       #
-###############################################
 
-if [[ $(id -u) != 0 ]]; then # Verify we are root if not exit
-   echo "Please Run This Script As Root or With Sudo!" 1>&2
-   exit 1
-fi
-
-DIR_CONF=/etc/n4p/
-
-#######################################
-# Building a sane working environment #
-#######################################
-get_name() # Retrieve the config values
-{
-    USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
-}
-
-depends()
-{
-    get_name "BRIDGED="; BRIDGED=$USE
-    get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
-}
+#sourch and call depends()
+source userspace
 
 
-#################################################################
+######################################################
 #################Verify our DHCP and bridge needs################
-#################################################################
+######################################################
 
 dhcp()
 {
-    if [[ -n $(grep -i Pentesters_AP ${DIR_CONF}dhcpd.conf | awk '{print $2}') ]]; then
-        [[ $BRIDGED != 'True' ]] && /etc/init.d/dhcpcd restart || /etc/init.d/net.$BRIDGE_NAME start
-    else # We apparently don't have the proper configuration file. Make the changes
-        cat ${DIR_CONF}dhcpd.conf >> /etc/dhcp/dhcpd.conf
-        dhcp
-    fi
+        [[ $BRIDGED != 'True' ]] && dhcpcd -cf ${DIR_CONF}dhcpd.conf -pf /var/run/dhcpcd.pid $AP || dhcpcd -cf ${DIR_CONF}dhcpd.conf -pf /var/run/dhcpcd.pid $BRIDGE_NAME
+
 }
 depends
 dhcp
