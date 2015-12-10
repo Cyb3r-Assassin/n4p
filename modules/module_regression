@@ -14,7 +14,7 @@ nm_check() # Some wireless cards have issues dropping the module driver with NM,
     else # were not using pentoo kill nm for systemd
       if [[ -f /etc/init.d/network-manager ]]; then
         sudo service network-manager stop
-        sudo service network-manager start
+        sudo service networ-kmanager start
         sudo service network-manager stop
       fi
     fi

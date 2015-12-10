@@ -10,6 +10,7 @@
 #### 2.0 Wireless operations now support Debian and Kali linux!
 
 Opening screenshot of n4p
+
 ![n4p](http://i.imgur.com/RGdtLR8.png)
 #### 2.0 offers an advanced section
 
@@ -25,7 +26,7 @@ Flexibility of ettercaps options have been preserved by allowing the user to cha
 
 ![n4p.conf](http://i.imgur.com/gZ0aV5H.png)
 
-N4P uses it's own DHCP configuration for it's Access Point creation. We do this so that connected targets can not view our machine inside the local network.
+N4P uses it's own DHCP configuration for its Access Point creation. We do this so that connected targets can not view our machine inside the local network.
 
 ![dhcp](http://i.imgur.com/xRtUt3y.png)
 
@@ -46,9 +47,10 @@ n4p stores all of our logs and reconnaissance data inside a tmp folder /tmp/n4p/
 This folder is used by n4p internal attack communications. Such as capturing .cap files and for cracking them later with option 4
 n4p will not destroy this folder on exit so that the user may go back and store the files elsewhere for later analysis. Or for incorporating into pentesting reports.
 If you incur troubles launching applications via n4p, view the n4p log files!
+
 ![temp](http://i.imgur.com/t4JZKRP.png)
 
-#### 2.0 adds cracking options of using hashcat now!!
+#### 2.0 adds cracking options of using hashcat now!!.
 
 > The option for building the firewall must be ran last and each time you change attacks.
 
