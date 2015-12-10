@@ -46,7 +46,7 @@ with_hashcat()
         hashcat
       else
         # This is an odd line we shouldn't see much. The hccap conversion removes the original cap file.
-        This section is prompted if the expected cap is non existent and the expected hccap is also non existent
+        # This section is prompted if the expected cap is non existent and the expected hccap is also non existent
         echo "${SESSIONFOLDER}${VICTIM_BSSID}-01.cap not found! You will need to investigate why this happened."
       fi
   else
