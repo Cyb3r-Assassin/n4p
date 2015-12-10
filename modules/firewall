@@ -1,39 +1,7 @@
 #!/bin/bash
 
-if [[ $(whoami) != 'root'  ]]; then 
-    echo "[$CRIT] Please Run This Script from n4p!"
-    exit 0
-fi
-
-DIR_CONF=/etc/n4p/
-DIR_LOGO=/usr/share/n4p/
-
-get_name() # Retrieve the config values
-{
-    USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
-}
-
-IPT="/sbin/iptables"
-AP="at0"
-# For multiple VPN just enumerate the tun sequence.
-VPN="tun0"
-VPNI="tap+"
-#VPN="tun1"
-get_name "IFACE0="; IFACE0=$USE
-get_name "IFACE1="; IFACE1=$USE
-get_name "AP="; UAP=$USE
-get_name "BRIDGED="; BRIDGED=$USE
-get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
-get_name "ATTACK="; ATTACK=$USE
-get_name "USE_VPN="; USE_VPN=$USE
-get_name "VPN_NAME="; VPN_NAME=$USE
-# Text color variables
-TXT_BLD=$(tput bold)             # Bold
-BLD_PUR=${txtbld}$(tput setaf 5) # purple
-BLD_TEA=${txtbld}$(tput setaf 6) # teal
-TXT_RST=$(tput sgr0)             # Reset
-WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
-INFO="${BLD_TEA}[${TXT_RST}${BLD_PUR} % ${TXT_RST}${BLD_TEA}]${TXT_RST}"
+source userspace
+depends
 
 echo "$(cat ${DIR_LOGO}firewall.logo)"; sleep 2
 

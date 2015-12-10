@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#Build a mon interface
+
+#retrieve absolute path structures so we can use symlinks and config files
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+source ${DIR}/modules/userspace
+depends
+
+do_it()
+{
+    [[ $LEGACY_REGRESSION == "False" ]] && airmon-ng check kill
+    [[ $(iw "$IFACE1" info | grep type | awk -F' ' '{print $2}') != "managed" ]] && iw dev "$IFACE1" set monitor none
+    [[ -z $(ip addr | grep -i "$MON") ]] && airmon-ng start $IFACE1
+    #Do regression test
+    #run the recon command
+}
+
+do_it_check() # add checks for kali people
+{
+    # Some wireless cards have issues dropping the module driver with NM, we have to cycle nm to reprobe the module. This loop checks if the adapter was succesfull going into monitor mode or not and then generates the processes over again if it wasn't.
+    while [[ -z $(ip addr list | grep $MON) ]]; do
+      echo -e "${BLD_TEA}Waiting for monitor interface to come up\n${TXT_RST}"
+      echo "Attempt $IFACEBUG"  
+      sleep 3
+
+      if [[ $IFACEBUG == "13" ]]; then
+        echo "${WARN}There appears to be a problem creating the monitor interface. You need to investigate. The following output may help. ${TXT_RST}"
+        iw "$IFACE1" list
+        sleep 7
+        exit 2
+      fi
+      IFACEBUG=$((IFACEBUG + 1))
+    done
+    SYSTEM_NOMINAL=0
+}

@@ -10,7 +10,7 @@ source userspace
 
 dhcp()
 {
-        [[ $BRIDGED != 'True' ]] && dhcpcd -cf ${DIR_CONF}dhcpd.conf -pf /var/run/dhcpcd.pid $AP || dhcpcd -cf ${DIR_CONF}dhcpd.conf -pf /var/run/dhcpcd.pid $BRIDGE_NAME
+    [[ $BRIDGED != 'True' ]] && dhcpcd -f ${DIR_CONF}dhcpd.conf -pf /var/run/dhcpcd.pid $AP || dhcpcd -cf ${DIR_CONF}dhcpd.conf -pf /var/run/dhcpcd.pid $BRIDGE_NAME
 
 }
 depends

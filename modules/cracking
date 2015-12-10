@@ -3,26 +3,9 @@
 # Building a sane working environment #
 #######################################
 xhost + # This is required for hashcat
-DIR_CONF=/etc/n4p/
-SESSIONFOLDER=/tmp/n4p/ # Set our tmp working configuration directory
+#source and call depends()
+source userspace
 
-get_name() # Retrieve the config
-{
-    USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
-}
-
-depends()
-{
-    get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
-    get_name "HASHCAT_TYPE="; HASHCAT_TYPE=$USE
-    get_name "HASHCAT_LOCATION="; HASHCAT_LOCATION=$USE
-    get_name "HASHCAT_MODE="; HASHCAT_MODE=$USE
-    get_name "WORD_LIST="; WORD_LIST=$USE
-    get_name "HASHCAT_RULES="; HASHCAT_RULES=$USE
-    get_name "HASHCAT_THREADS="; HASHCAT_THREADS=$USE
-    get_name "CRACK="; CRACK=$USE
-    get_name "ATTACK="; ATTACK=$USE
-}
 
 shallwecrack()
 {

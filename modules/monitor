@@ -1,21 +1,49 @@
 #!/bin/bash
-BLD_RED=${txtbld}$(tput setaf 1) # red
-BLD_TEA=${txtbld}$(tput setaf 6) # teal
-TXT_RST=$(tput sgr0)             # Reset
+source userspace
 
-DIR_LOGO=/usr/share/n4p/
-LOG_METALOG=/var/log/everything/current
-LOG_SYSLOG_NG=/var/log/dhcpd.log
-
-echo "${BLD_TEA}$(cat ${DIR_LOGO}/monitor.logo)${TXT_RST}"
-
-#if [[ -f $LOG_METALOG ]]; then
-#    USE=$LOG_METALOG
-#elif [[ -f $LOG_SYSLOG_NG ]]; then
-#    USE=$LOG_SYSLOG_NG
-#else
+if [[ -f $LOG_METALOG ]]; then
+    USE=$LOG_METALOG
+elif [[ -f $LOG_SYSLOG_NG ]]; then
+    USE=$LOG_SYSLOG_NG
+else
     echo "We were unable to locate any system log files\nPlease fix or use a different mode"
 fi
 
 #tail -f $USE | grep at0 | awk -FDHCPACK '{print $2}' | awk -Fvia '{print $1}'
+# This seems to be really slow. Lets try it in order to prevent swapping of sys logs for now.
 tail -f /var/log/dhcpd.log
+
+#mv $USE ${USE}.bak
+#echo "" > $USE
+
+#while true; do
+#        while read line
+#        do GOTCHYA=$(egrep 'DHCPACK|$1' | awk -Fon '{print $2'})
+#        done < $USE
+#        clear
+#        echo "${BLD_TEA}$(cat ${DIR_LOGO}monitor.logo)${TXT_RST}"
+#        echo -e "$GOTCHYA \n"
+#        sleep 8
+#done
+
+monitor()
+{
+    if [[ -n $MONITOR_MODE ]]; then
+        if [[ $MONITOR_MODE == "Custom" ]]; then
+            xterm -bg black -fg DodgerBlue1 -T "N4P Victims" -geometry 65x15 -e "bash -ic \"${DIR}/./monitor ; bash\"" &>/dev/null &
+        elif [[ $MONITOR_MODE == "dhcpdump" ]]; then
+            xterm -bg black -fg DodgerBlue1 -T "N4P Victims" -geometry 65x15 -e "bash -ic \"dhcpdump ; bash\"" &>/dev/null &
+        elif [[ $MONITOR_MODE == "arp" ]]; then
+            xterm -bg black -fg DodgerBlue1 -T "N4P Victims" -geometry 65x15 -e "bash -ic \"arp -a -i $1 ; bash\"" &>/dev/null &
+        fi
+    fi
+}
+
+killemAll()
+{
+    #rm $USE
+    #mv ${USE}.bak $USE
+    exit 0
+}
+
+trap killemAll INT HUP;

@@ -3,42 +3,10 @@
 # Do all prerun variables and safety measures #
 # before anything else starts happening       #
 ###############################################
-if [[ $(id -u) != 0 ]]; then # Verify we are root if not exit
-   echo "Please Run This Script As Root or With Sudo!" 1>&2
-   exit 1
-fi
+#source and call depends()
+source userspace #view this file for functions and variables you may use
+depends
 
-DIR_CONF=/etc/n4p/
-DIR_LOGO=/usr/share/n4p/
-
-#######################################
-# Building a sane working environment #
-#######################################
-
-SESSIONFOLDER=/tmp/n4p # Set our tmp working configuration directory and then build config files
-[ ! -d "$SESSIONFOLDER" ] && mkdir "$SESSIONFOLDER"; mkdir -p "$SESSIONFOLDER" "${SESSIONFOLDER}/logs"
-
-
-#Use these functions to retrieve properties
-get_name() # Retrieve the config values
-{
-    USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
-}
-
-get_state() # Retrieve the state of interfaces
-{
-    STATE=$(ip addr list | grep -i $1 | grep -i DOWN | awk -Fstate '{print $2}' | cut -d ' ' -f 2)
-}
-
-get_inet() # Retrieve the ip of the interface
-{
-    INET=$(ip addr list | grep -i $1 | grep -i inet | awk '{print $2}')
-}
-
-get_RCstatus() # What is the status from OpenRC of the service
-{
-    STATUS=$(/etc/init.d/$1 status | sed 's/* status: //g' | cut -d ' ' -f 2)
-}
 
 # This statement will allow you to add your custom variables for each of your modules and appened them into the config file for the user on first run
 if [[ -z $(grep MY_CUSTOM_VARIABLE= ${DIRCONF}n4p.conf) ]]; then #User module custom variable does not exist yet in our config. Add it now
@@ -48,50 +16,8 @@ if [[ -z $(grep MY_CUSTOM_VARIABLE= ${DIRCONF}n4p.conf) ]]; then #User module cu
     exit 0
 fi
 
-depends()
-{
-    get_name "MY_CUSTOM_VARIABLE="; MY_CUSTOM_VARIABLE=$USE
-    get_name "IFACE0="; IFACE0=$USE
-    get_name "IFACE1="; IFACE1=$USE
-    get_name "ESSID="; ESSID=$USE
-    get_name "STATION="; STATION=$USE
-    get_name "LOCAL_BSSID="; LOCAL_BSSID=$USE
-    get_name "CHAN="; CHAN=$USE
-    get_name "BEACON="; BEACON=$USE
-    get_name "PPS="; PPS=$USE
-    get_name "AP="; UAP=$USE #This is what we name the AP via the config file
-    get_name "BRIDGED="; BRIDGED=$USE
-    get_name "BRIDGE_NAME="; BRIDGE_NAME=$USE
-    get_name "ATTACK="; ATTACK=$USE
-    get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
-    get_name "TYPE="; TYPE=$USE
-    get_name "ENCRYPTION="; ENCRYPTION=$USE
-    get_name "MONITOR_MODE="; MONITOR_MODE=$USE
-    #examples of values you may use
-    AP="at0" #This is the device name as per "ip addr"
-    MON="${IFACE1}mon"
-    VPN="tun0"
-    VPNI="tap+"
-    AP_GATEWAY=$(grep routers ${DIR_CONF}/dhcpd.conf | awk -Frouters '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
-    AP_SUBNET=$(grep netmask ${DIR_CONF}/dhcpd.conf | awk -Fnetmask '{print $2}' | cut -d '{' -f 1 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
-    AP_IP=$(grep netmask ${DIR_CONF}/dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 1)
-    AP_BROADCAST=$(grep broadcast-address ${DIR_CONF}/dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
-    # Text color variables
-    TXT_UND=$(tput sgr 0 1)          # Underline
-    TXT_BLD=$(tput bold)             # Bold
-    BLD_RED=${txtbld}$(tput setaf 1) # red
-    BLD_YEL=${txtbld}$(tput setaf 2) # Yellow
-    BLD_ORA=${txtbld}$(tput setaf 3) # orange
-    BLD_BLU=${txtbld}$(tput setaf 4) # blue
-    BLD_PUR=${txtbld}$(tput setaf 5) # purple
-    BLD_TEA=${txtbld}$(tput setaf 6) # teal
-    BLD_WHT=${txtbld}$(tput setaf 7) # white
-    TXT_RST=$(tput sgr0)             # Reset
-    INFO=${BLD_WHT}*${TXT_RST}       # Feedback
-    QUES=${BLD_BLU}?${TXT_RST}       # Questions
-    PASS="${BLD_TEA}[${TXT_RSR}${BLD_WHT} OK ${TXT_RST}${BLD_TEA}]${TXT_RST}"
-    WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
-    # Start text with $BLD_YEL variable and end the text with $TXT_RST
-}
+#grab custom variables you set in the n4p.conf file
+get_name "MY_CUSTOM_VARIABLE="; MY_CUSTOM_VARIABLE=$USE
+
 
 echo "My custom module!!!!!"

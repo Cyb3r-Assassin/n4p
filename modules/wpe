@@ -1,15 +1,13 @@
 #!/bin/bash
-###############################################
-# Do all prerun variables and safety measures #
-# before anything else starts happening       #
-###############################################
-if [[ $(id -u) != 0 ]]; then # Verify we are root if not exit
-   echo "Please Run This Script As Root or With Sudo!" 1>&2
-   exit 1
-fi
+#retrieve absolute path structures so we can use symlinks and config files
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-DIR_CONF=/etc/n4p/
-
-USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
-get_name "WPE_CONFIG="; WPE_CONFIG=$USE
+source ${DIR}/userspace
+depends
 hostapd $WPE_CONFIG

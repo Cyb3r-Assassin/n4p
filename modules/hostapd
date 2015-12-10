@@ -3,25 +3,6 @@
 # Do all prerun variables and safety measures #
 # before anything else starts happening       #
 ###############################################
-if [[ $(id -u) != 0 ]]; then # Verify we are root if not exit
-   echo "Please Run This Script As Root or With Sudo!" 1>&2
-   exit 1
-fi
-
-DIR_CONF=/etc/n4p/
-
-#######################################
-# Building a sane working environment #
-#######################################
-
-get_name() # Retrieve the config values
-{
-    USE=$(grep $1 ${DIR_CONF}n4p.conf | awk -F= '{print $2}')
-}
-
-depends()
-{
-    get_name "HOSTAPD_CONFIG="; HOSTAPD_CONFIG=$USE
-}
+source userspace
 depends
 hostapd $HOSTAPD_CONFIG

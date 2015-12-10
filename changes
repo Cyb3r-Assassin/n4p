@@ -4,9 +4,21 @@ Added WPE example certs and conf file
 
 Adjustments to hostapd conf file
 
-easter eggs
+Added radius.conf file
+
+Easter eggs
 
 Prepping for new modules
+
+Optimized code
+
+Fixed arpspoof attack typo
+
+Fixed accidental dhcp file overwrite
+
+Deprecated networkmanager checks in favor of <airmon kill>
+
+Migrated to sourcing userspace code instead of duplicating it every module.
 
 2.0.2 Defcon Build
 
@@ -16,34 +28,34 @@ N4P config file setup with default values for Pentoo ISO
 
 Changed the naming of <n4p_iptables> to <firewall> to better suit the modularized design.
 
-removed .sh from exacutable file naming
+removed .sh from executable file naming
 
-Implamented hostapd default config files in n4p config directory /etc/n4p/
+Implemented hostapd default config files in n4p config directory /etc/n4p/
 
-Fixed DHCP and removed its system integration to utilise n4p only dhcp config file from /etc/n4p/
+Fixed DHCP and removed its system integration to utilize n4p only dhcp config file from /etc/n4p/
 
-added robust and axhaustive measures of woking with Netwok Manager and resolutions of interface module load failures while utilizing Network Manager.
+added robust and exhaustive measures for working with Network Manager and resolutions for interface module load failures while utilizing Network Manager.
 
 converted all remaining rout assignments from legacy applications to current ip standards
 
 Fixed an action call in bridge module
 
-Tried to make font colors easier to reading
+Tried to make font colors easier for reading
 
 cleaned up unused variables throughout modules
 
-Added the new monitor interface and NM control for airmon-ng in all modules that user airmon-ng
+Added the new monitor interface and NM control for airmon-ng in all modules that use airmon-ng
 
 2.0.1
 Fixed a bad if nest in dump
 tweak some things in recon
 
 2.0
-Upstraem aircrack changes addressed via ebuild, Gentoo/Pentoo only.
+Upstream aircrack changes addressed via ebuild, Gentoo/Pentoo only.
 
 Hostapd working for WPE attacks
 
-Fixed very broken logic that had evolved in intiation processes in n4p_main.sh
+Fixed very broken logic that had evolved in initiation processes in n4p_main.sh
 
 Made changes to the ebuild.
 
@@ -53,9 +65,9 @@ Adjust SslStrip call process that allows it to be initiated individually without
 
 Modulerized existing N4P scripts
 
-Broke out n4p_main.sh into segrigated scripts based on functions
+Broke out n4p_main.sh into segregated scripts based on functions
 
-Fixed the code for adapter bridging, support for Pentoo/Gentoo only! (it's been broken for a while)
+Fixed the code for adaptor bridging, support for Pentoo/Gentoo only! (it's been broken for a while)
 
 Added Hashcat functionality for cracking
 
@@ -67,7 +79,7 @@ Added Network Manager support
 
 Added Kali support for wireless portions
 
-Hostapd Accesspoint added
+Hostapd Access point added
 
 VPN works through the firewall module. Uses openvpn.
 
@@ -109,7 +121,7 @@ Improved ARPSPOOF by increasing cognition with config file options
 
 Cleaned up the functions for iptables. Didn't need to be so elaborate for newer versions of n4p
 
-Extended ettercaps ability by transfering its command options into the config file
+Extended ettercaps ability by transferring its command options into the config file
 
 Fixed a trivial parsing of ip retrieval leaving trailing space
 
@@ -223,7 +235,7 @@ Cleaned verbose outputs for easier follow along reading
 Added -- switches/flags feature. e.g. n4p --help
 
 Lot of code changes and additions. 
-New methods of operations and package controll.
+New methods of operations and package control.
 
 New less redundant more sane kill script logic
 
