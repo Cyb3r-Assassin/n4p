@@ -50,7 +50,7 @@ If you incur troubles launching applications via n4p, view the n4p log files!
 
 ![temp](http://i.imgur.com/t4JZKRP.png)
 
-#### 2.0 adds cracking options of using hashcat now!!.
+#### 2.0 adds cracking options for using hashcat now!!.
 
 > The option for building the firewall must be ran last and each time you change attacks.
 
