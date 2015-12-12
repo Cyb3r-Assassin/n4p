@@ -1,10 +1,15 @@
 #!/bin/bash
 
 #source and call depends()
-source userspace
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+source ${DIR}/userspace
 source airmon
-depends
-
 
 #nm_chcek was here
 
@@ -15,11 +20,6 @@ bully()
 }
 
 trap killAll INT HUP;
-keepalive()
-{
-    read -p "$WARN Press ctrl^c when you are ready to go down!" ALLINTHEFAMILY # Protect this script from going down hastily
-    [[ $ALLINTHEFAMILY != 'SGFjayBUaGUgUGxhbmV0IQ==' ]] && clear; keepalive
-}
 
 killAll()
 {

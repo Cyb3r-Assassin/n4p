@@ -2,10 +2,17 @@
 #######################################
 # Building a sane working environment #
 #######################################
-xhost + # This is required for hashcat
-#source and call depends()
-source userspace
 
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+source ${DIR}/userspace
+
+xhost + # This is required for hashcat
 
 shallwecrack()
 {

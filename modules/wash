@@ -9,6 +9,7 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 source ${DIR}/userspace
+source ${DIR}/airmon
 
 echo "${BLD_TEA}$(cat ${DIR_LOGO}wash.logo)${TXT_RST}"; sleep 2.5
 
@@ -17,7 +18,6 @@ echo "${BLD_TEA}$(cat ${DIR_LOGO}wash.logo)${TXT_RST}"; sleep 2.5
 wash()
 {
     xterm -hold -bg black -fg blue -T "Wash" -geometry 90x20 -e wash -i $MON --ignore-fcs &>/dev/null &
-    keepalive
 }
 
 trap killAll INT HUP;
@@ -35,6 +35,7 @@ killAll()
     exit 0
 }
 depends
-#do_it
-#do_it_check
+do_it
+do_it_check
 wash
+keepalive

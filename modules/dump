@@ -1,79 +1,15 @@
 #!/bin/bash
-#source and call depends()
-source userspace
-
-nm_check()
-{
-  if [[ $NETWORKMANAGER == "True" ]]; then
-    if [[ $OS == "Pentoo" ]]; then
-      if [[ -f /etc/init.d/NetworkManager ]]; then
-        sudo /etc/init.d/NetworkManager restart
-        sleep 7
-        sudo /etc/init.d/NetworkManager stop
-        sleep 2
-      else
-        echo "Error in Config file. NetworkManager does not appear to be present."
-      fi
-    else # were not using pentoo kill nm for systemd
-      if [[ -f /etc/init.d/network-manager ]]; then
-        sudo service network-manager stop
-        sudo service network-manager start
-        sudo service network-manager stop
-      fi
-    fi
-  elif [[ $OS == "Pentoo" ]]; then
-      if [[ -e /etc/init.d/net.$IFACE1 ]]; then
-          echo "$INFO I'm having issues with $IFACE1"
-      fi
-  fi
-}
-
-do_it() #move this into a module next version and add checks for kali people
-{
-    [[ $(iw "$IFACE1" info | grep type | awk -F' ' '{print $2}') != "managed" ]] && iw dev "$IFACE1" set monitor none
-    [[ -z $(ip addr | grep -i "$MON") ]] && airmon-ng start $IFACE1
-    do_it_check
-}
-
-do_it_check() #move this into a module next version and add checks for kali people
-{
-    while [[ -z $(ip addr list | grep $MON) ]]; do
-      echo -e "${BLD_TEA}Waiting for monitor interface to come up\n${TXT_RST}"
-      echo "Attempt $IFACEBUG"  
-      sleep 3
-      if [[ $IFACEBUG == '2' || $IFACEBUG == '5' || $IFACEBUG == '14' || $IFACEBUG == '18' ]]; then
-        nm_check
-        if [[  $IFACEBUG == '9' || $IFACEBUG == '16' ]]; then # NM May be hung, Go to hell NetworkManager
-          kill -9 $(ps -A | grep NetworkManager | awk -F' ' '{print $1}')
-        fi
-      fi
-
-      if [[ $IFACEBUG == "20" ]]; then
-        echo "${WARN}There appears to be a problem creating the monitor interface. You need to investigate. The following output may help. ${TXT_RST}"
-        iw "$IFACE1" list
-        sleep 7
-        exit 2
-      fi
-      IFACEBUG=$((IFACEBUG + 1))
-      do_it
-    done
-    xterm -bg black -fg DodgerBlue1 -T "Dump" -geometry 90x20 -e "bash -ic \"airodump-ng --bssid $VICTIM_BSSID -c $CHAN --output-format pcap -w ${SESSIONFOLDER}$VICTIM_BSSID $MON ; bash\"" &>/dev/null &
-    keepalive
-}
-
-trap killAll INT HUP;
-keepalive()
-{
-    read -p "$WARN Press ctrl^c when you are ready to go down!${TXT_RST}" ALLINTHEFAMILY # Protect this script from going down hastily
-    [[ $ALLINTHEFAMILY != 'SGFjayBUaGUgUGxhbmV0IQ==' ]] && clear; keepalive
-}
-
-killAll()
-{
-    airmon-ng stop $MON
-    echo "${BLD_TEA}$(cat ${DIR_LOGO}die.logo)${TXT_RST}"
-    sleep 2
-    exit 0
-}
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+source ${DIR}/userspace
+source ${DIR}/airmon
 depends
 do_it
+do_it_check
+xterm -bg black -fg DodgerBlue1 -T "Dump" -geometry 90x20 -e "bash -ic \"airodump-ng --bssid $VICTIM_BSSID -c $CHAN --output-format pcap -w ${SESSIONFOLDER}$VICTIM_BSSID $MON ; bash\"" &>/dev/null &
+keepalive

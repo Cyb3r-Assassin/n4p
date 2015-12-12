@@ -12,16 +12,14 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
     [[ $SOURCE != /* ]] && SOURCE="$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+SESSIONFOLDER=/tmp/n4p/ # Set our tmp working configuration directory and then build config files
 
-source userspace
+source ${DIR}/userspace
 
 banner()
 {
     echo "${BLD_TEA}$(cat ${DIR_LOGO}auth.logo)${TXT_RST}"; sleep 3
 }
-
-
-#keepalive() usually here
 
 killemAll()
 {
@@ -42,7 +40,6 @@ trap killemAll INT HUP;
 
 go() #move this into a module next version and add checks for kali people
 {
-    [[ $(iw "$IFACE1" info | grep type | awk -F' ' '{print $2}') != "managed" ]] && iw dev "$IFACE1" set monitor none
     if [[ $UAP == "AIRBASE" ]]; then
       ${DIR}/./airmon
     elif [[ $UAP == "HOSTAPD" ]]; then
@@ -54,14 +51,14 @@ go() #move this into a module next version and add checks for kali people
     fi
     sleep 4 # Just give us some padding for the Monitor interface to assimilate.
     do_it_check
-    [[ $UAP == "AIRBASE" && $SYSTEM_NOMINAL == "0" ]] && startairbase || killemAll
+    [[ $UAP == "AIRBASE" && $SYSTEM_NOMINAL == "0" ]] && startairbase || killemAll #Nominal is puuled from the n4p airmon script
 }
 
 startairbase()
 {
     echo -n "{$INFO} STARTING SERVICE: AIRBASE-NG${TXT_RST}"
     if [[ $VERBOSE_LOGS == "True" ]]; then
-        echo "$(date)" >> ${SESSIONFOLDER}logs/airbase-ng.log
+        echo "$(date)" >> ${SESSIONFOLDER}logs/airbase-ng.log # Build our own log file if the user asks
         xterm -hold -bg black -fg green -T "Airbase-NG Log Window" -geometry 90x20 -e tail -f ${SESSIONFOLDER}logs/airbase-ng.log &>/dev/null &
     fi
 
@@ -80,13 +77,14 @@ startairbase()
 starthostapd()
 {
   ${DIR}/./hostapd
+  sleep 5
   setroutes
   ${DIR}/./monitor
 }
 
 setroutes()
 {
-    get_state "$AP"
+    get_state "$AP" # get_state is sourced from user space file
     while [[ $STATE == 'DOWN' || -z $(ip addr list | grep $AP) ]]; do #check AP state if down go up, if AP has not loaded yet wait a bit
         sleep 0.5
         ip link set $AP up
@@ -117,8 +115,8 @@ setroutes()
         ${DIR}/./dhcp
 }
 
-depends
+depends #This function is sourced
 banner
-setupenv
+setupenv #This function is sourced
 go
-keepalive
+keepalive #This function is sourced

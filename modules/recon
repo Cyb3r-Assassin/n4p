@@ -20,12 +20,6 @@ recon()
     xterm -bg black -fg DodgerBlue1 -T "Recon" -geometry 90x20 -e "bash -ic \"airodump-ng ${MON} ; bash\"" &>/dev/null &
 }
 
-keepalive()
-{
-    read -p "$WARN Press ctrl^c when you are ready to go down!${TXT_RST}" ALLINTHEFAMILY # Protect this script from going down hastily
-    [[ $ALLINTHEFAMILY != 'SGFjayBUaGUgUGxhbmV0IQ==' ]] && clear; keepalive
-}
-
 killAll()
 {
     airmon-ng stop $MON

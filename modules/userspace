@@ -99,3 +99,9 @@ depends()
     WARN="${BLD_TEA}[${TXT_RST}${BLD_PUR} * ${TXT_RST}${BLD_TEA}]${TXT_RST}"
     # Start text with $BLD_YEL variable and end the text with $TXT_RST
 }
+
+keepalive()
+{
+    read -p "$WARN Press ctrl^c when you are ready to go down!${TXT_RST}" ALLINTHEFAMILY # Protect this script from going down hastily
+    [[ $ALLINTHEFAMILY != 'SGFjayBUaGUgUGxhbmV0IQ==' ]] && clear; keepalive
+}

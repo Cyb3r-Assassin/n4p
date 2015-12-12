@@ -10,18 +10,25 @@ while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a sym
     [[ $SOURCE != /* ]] && SOURCE="$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-source ${DIR}/modules/userspace
+source ${DIR}/userspace
 depends
 
 do_it()
 {
-    [[ $LEGACY_REGRESSION == "False" ]] && airmon-ng check kill
-    [[ $(iw "$IFACE1" info | grep type | awk -F' ' '{print $2}') != "managed" ]] && iw dev "$IFACE1" set monitor none
-    [[ -z $(ip addr | grep -i "$MON") ]] && airmon-ng start $IFACE1
-    #Do regression test
-    #run the recon command
+    if [[ $LEGACY_REGRESSION == "False" ]]; then
+      airmon-ng check kill
+      [[ $(iw "$IFACE1" info | grep type | awk -F' ' '{print $2}') != "managed" ]] && iw dev "$IFACE1" set monitor none
+      [[ -z $(ip addr | grep -i "$MON") ]] && airmon-ng start $IFACE1
+    elif [[ $LEGACY_REGRESSION == "False" ]]; then
+      source ${DIR}/module_regression
+      nm_check
+      regression_check
+    else
+      echo "Error in config for LEGACY_REGRESSION"
+      echo "output is $LEGACY_REGRESSION"
+    fi
 }
-
+# We need to verify monitor is available before proceeding
 do_it_check() # add checks for kali people
 {
     # Some wireless cards have issues dropping the module driver with NM, we have to cycle nm to reprobe the module. This loop checks if the adapter was succesfull going into monitor mode or not and then generates the processes over again if it wasn't.
@@ -40,3 +47,5 @@ do_it_check() # add checks for kali people
     done
     SYSTEM_NOMINAL=0
 }
+do_it
+do_it_check
