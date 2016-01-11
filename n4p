@@ -91,7 +91,7 @@ menu()
 	       elif [[ $ATTACK == "WPE" ]]; then
 		  sudo xterm -bg black -fg DodgerBlue1 -T "WPE" -geometry 50x5 -e "bash -ic \"${DIR_MODULES}./wpe ; bash\"" &>/dev/null & #sudo xterm -bg black -fg DodgerBlue1 -T "WPE" -geometry 90x20 -e ./modules/wpe  &>/dev/null &
 	       elif [[ $ATTACK == "EAP" ]]; then
-		  sudo xterm -bg black -fg DodgerBlue1 -T "WPE" -geometry 50x5 -e "bash -ic \"${DIR_MODULES}./eap ; bash\"" &>/dev/null &
+		  sudo xterm -bg black -fg DodgerBlue1 -T "EAP" -geometry 50x5 -e "bash -ic \"${DIR_MODULES}./eap ; bash\"" &>/dev/null &
 	       elif [[ $ATTACK == "ArpSpoof" ]]; then
 		  sudo xterm -bg black -fg DodgerBlue1 -T "ArpSpoof" -geometry 90x20 -e "bash -ic \"arpspoof -i $IFACE1 $ARP_VICTIM ; bash\"" &>/dev/null & #sudo xterm -T "Arpspoof $IFACE1 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i $IFACE1 $ARP_VICTIM &>/dev/null &
 	      fi
