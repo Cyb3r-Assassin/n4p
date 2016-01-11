@@ -1,0 +1,32 @@
+#!/bin/bash
+#retrieve absolute path structures so we can use symlinks and config files
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -h "$SOURCE" ]]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it's relativeness to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+source ${DIR}/userspace
+depends
+
+echo "interface=$IFACE1" > /etc/n4p/eap.conf
+echo "hw_mode=g" >> /etc/n4p/eap.conf
+echo "$CHANNEL" >> /etc/n4p/eap.conf
+echo "driver=nl80211" >> /etc/n4p/eap.conf
+echo "ssid=$ESSID" >> /etc/n4p/eap.conf
+echo "auth_algs=1" >>  /etc/n4p/eap.conf#Open Authentication
+echo "wpa=2" >> /etc/n4p/eap.conf
+echo "wpa_key_mgmt=WPA-EAP" >> /etc/n4p/eap.conf
+echo "rsn_pairwise=CCMP" >> /etc/n4p/eap.conf
+echo "ieee8021x=1" >> /etc/n4p/eap.conf
+echo "eapol_key_index_workaround=0" >> /etc/n4p/eap.conf
+echo "own_ip_addr=127.0.0.1" >> /etc/n4p/eap.conf
+echo "auth_server_addr=127.0.0.1" >> /etc/n4p/eap.conf
+echo "auth_server_port=1812" >> /etc/n4p/eap.conf
+echo "auth_server_shared_secret=test123" >> /etc/n4p/eap.conf
+
+radiusd -s -X 2>&1
+sleep 5
+hostapd /etc/n4p/eap.conf 2>&1
