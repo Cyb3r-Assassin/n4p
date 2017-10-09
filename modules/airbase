@@ -1,6 +1,6 @@
 #!/bin/bash
 ##############################################
-# Do all prerun variables and safty measures #
+# Do all prerun variables and safety measures #
 # before anything else starts happening      #
 ##############################################
 
@@ -51,7 +51,7 @@ go() #move this into a module next version and add checks for kali people
     fi
     sleep 4 # Just give us some padding for the Monitor interface to assimilate.
     do_it_check
-    [[ $UAP == "AIRBASE" && $SYSTEM_NOMINAL == "0" ]] && startairbase || killemAll #Nominal is puuled from the n4p airmon script
+    [[ $UAP == "AIRBASE" && $SYSTEM_NOMINAL == "0" ]] && startairbase || killemAll #Nominal is puled from the n4p airmon script
 }
 
 startairbase()

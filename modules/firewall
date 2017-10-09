@@ -117,7 +117,7 @@ fw_start()
             #$IPT -A allowed-connection -p udp -i $AP -m multiport --dports 80,443,53,68,67 -j ACCEPT
             $IPT -A allowed-connection -i $AP -o $IFACE0 -j ACCEPT
         elif [[ $UAP == "HOSTAPD" ]]; then
-            echo -ne "$INFO Allowing wirless for hostapd, routing $AP through $IFACE0 be sure hostapd was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
+            echo -ne "$INFO Allowing wireless for hostapd, routing $AP through $IFACE0 be sure hostapd was configured for $AP and $IFACE0 as the output otherwise adjust these settings\n"
             $IPT -A allowed-connection -i $IFACE1 -o $IFACE0 -j ACCEPT
             $IPT -A allowed-connection -i $IFACE0 -o $IFACE1 -j ACCEPT
         else

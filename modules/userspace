@@ -44,7 +44,7 @@ depends()
     get_name "CHAN="; CHAN=$USE
     get_name "BEACON="; BEACON=$USE
     get_name "PPS="; PPS=$USE
-    get_name "AP="; UAP=$USE #This is how we determin accesspoint service type via the config file
+    get_name "AP="; UAP=$USE #This is how we determine access-point service type via the config file
     get_name "VICTIM_BSSID="; VICTIM_BSSID=$USE
     get_name "WPE_CONFIG="; WPE_CONFIG=$USE
     get_name "SECURITY_TYPE="; SECURITY_TYPE=$USE
@@ -82,8 +82,8 @@ depends()
     AP_IP=$(grep netmask ${DIR_CONF}dhcpd.conf | awk -Fnetmask '{print $1}' | cut -d ' ' -f 2)
     AP_BROADCAST=$(grep broadcast-address ${DIR_CONF}dhcpd.conf | awk -Fbroadcast-address '{print $2}' | cut -d ';' -f 1 | cut -d ' ' -f 2)
     # Text color variables
-    TXT_UND=$(tput sgr 0 1)          # Underline
-    TXT_BLD=$(tput bold)             # Bold
+    TXT_UND=$(tput sgr 0 1) # Underline
+    TXT_BLD=$(tput bold) # Bold
     BLD_RED=${txtbld}$(tput setaf 1) # red
     BLD_YEL=${txtbld}$(tput setaf 2) # Yellow
     BLD_ORA=${txtbld}$(tput setaf 3) # orange

@@ -10,4 +10,34 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 source ${DIR}/userspace
 depends
-hostapd $WPE_CONFIG
+
+echo "interface=$IFACE1" > /etc/n4p/wpe.conf
+echo "ssid=$ESSID" >> /etc/n4p/wpe.conf
+echo "driver=nl80211" >> /etc/n4p/wpe.conf
+echo "hw_mode=g" >> /etc/n4p/wpe.conf
+echo "wmm_enabled=1" >> /etc/n4p/wpe.conf
+echo "logger_stdout=-1" >> /etc/n4p/wpe.conf
+echo "logger_stdout_level=0" >> /etc/n4p/wpe.conf
+echo "dump_file=/tmp/hostapd.dump" >> /etc/n4p/wpe.conf
+echo "ctrl_interface=/var/run/hostapd" >> /etc/n4p/wpe.conf
+echo "ieee8021x=1" >> /etc/n4p/wpe.conf
+echo "eapol_key_index_workaround=0" >> /etc/n4p/wpe.conf
+echo "own_ip_addr=127.0.0.1" >> /etc/n4p/wpe.conf
+
+#We use net-dialup/freeradius by default
+echo "auth_server_addr=127.0.0.1" >> /etc/n4p/wpe.conf
+echo "auth_server_port=1812" >> /etc/n4p/wpe.conf
+echo "auth_server_shared_secret=test123" >> /etc/n4p/wpe.conf
+echo "wpa=3" >> /etc/n4p/wpe.conf
+echo "wpa_key_mgmt=WPA-EAP" >> /etc/n4p/wpe.conf
+echo "$CHANNEL" >> /etc/n4p/wpe.conf
+echo "wpa_pairwise=TKIP CCMP" >> /etc/n4p/wpe.conf
+echo "rsn_pairwise=TKIP CCMP" >> /etc/n4p/wpe.conf
+
+echo "ca_cert=/etc/raddb/certs/server.pem" >> /etc/n4p/wpe.conf
+echo "server_cert=/etc/raddb/certs/server.pem" >> /etc/n4p/eap.conf
+echo "private_key=/etc/raddb/certs/ca.pem" >> /etc/n4p/wpe.conf
+echo "private_key_passwd=whatever" >> /etc/n4p/wpe.conf
+echo "check_crl=0" >> /etc/n4p/wpe.conf
+
+hostapd /etc/n4p/wpe.conf 2>&1

@@ -18,8 +18,8 @@ rebuild_network()
         get_RCstatus "net.$BRIDGE_NAME"
         [[ $STATUS == 'started' ]] && /etc/init.d/net.$BRIDGE_NAME stop
 
-        get_state "$BRDIGE"
-        [[ $STATE != 'DOWN' ]] && ip link set $BRDIGE down
+        get_state "$BRIDGE"
+        [[ $STATE != 'DOWN' ]] && ip link set $BRIDGE down
 
         brctl delif "$BRIDGE_NAME $RESP_BR_1"
         brctl delif "$BRIDGE_NAME $RESP_BR_2"

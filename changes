@@ -1,3 +1,11 @@
+2.0.4
+
+Added EAP modules
+
+changed WPE and hostapd conf files to be built dynamicly
+
+
+
 2.0.3
 
 Added WPE example certs and conf file
